@@ -12,3 +12,5 @@ for ( i = 0, l = controllers.length; i < l; i += 1 ) {
         console.log(arguments)
     } )
 }
+
+// TODO test with https://github.com/mscdex/ssh2
