@@ -6,4 +6,4 @@ export HUBOT_XMPP_ROOMS=deploy@conference.manuel-darveaus-imac.local
 export HUBOT_XMPP_HOST=localhost
 export HUBOT_XMPP_PORT=5222
 
-./bin/hubot -a xmpp
+./bin/hubot -i jobot -a xmpp

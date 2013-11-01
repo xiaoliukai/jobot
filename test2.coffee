@@ -1,17 +1,17 @@
-# Removes keys specified in second parameter from first parameter
-reduce = (a, b) ->
-  for propName in b
-    delete a[propName]
-  a
+Fs             = require 'fs'
+Path           = require 'path'
 
-options={opt:"val1", opt2:"val2", opt3:"val3"}
-todelete=['opt', 'opt2']
+path = '/Users/mdarveau/workspace/jobot/scripts'
+file = 'hudson-test-manager.js'
 
-for key, value of options
-  console.log key + "=" + value
-  
-reduce options, todelete
+ext  = Path.extname file
+full = Path.join path, Path.basename(file, ext)
 
-console.log "-------"
-for key, value of options
-  console.log key + "=" + value
+console.log Path.join( path, Path.basename( file, ext ) + '.coffee' ) 
+console.log Fs.existsSync( Path.join( path, Path.basename( file, ext ) + '.coffee' ) )
+console.log ext is '.js' and not Fs.exists( Path.join( path, Path.basename( file, ext ) + '.coffee' ) )
+
+if ext is '.coffee' or ( ext is '.js' and not Fs.existsSync( Path.join( path, Path.basename( file, ext ) + '.coffee' ) ) )
+  console.log 'load'
+else 
+  console.log 'no load'

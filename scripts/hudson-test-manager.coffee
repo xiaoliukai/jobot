@@ -25,6 +25,3 @@ module.exports = ( robot ) ->
     robot.http( "https://solic1.dev.8d.com:8443/view/ftk-tests/api/json" ).get( api ) ( err, res, body ) ->
       console.log(res)
       console.log(body)
-      
-  robot.hear /.*test.*/i, ( msg ) ->
-    msg.send "Have you said test? If you need be just ask for a test report"
