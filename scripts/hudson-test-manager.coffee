@@ -22,7 +22,7 @@ api = require('./hudson-test-manager/api.coffee')
 module.exports = ( robot ) ->
 
   robot.respond /.*test report.*/i, ( msg ) ->
-    robot.http( "https://solic1.dev.8d.com:8443/view/ftk-tests/api/json" ).get(api) ( err, res, body ) ->
+    robot.http( "https://solic1.dev.8d.com:8443/view/ftk-tests/api/json" ).get( api ) ( err, res, body ) ->
       console.log(res)
       console.log(body)
       
