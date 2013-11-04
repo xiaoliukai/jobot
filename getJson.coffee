@@ -19,5 +19,6 @@ printJson = (path) ->
     catch error
       inspect( body )
 
+#printJson 'job/ftk_trunk_test'
 #printJson 'job/ftk_trunk_test/lastCompletedBuild'
 printJson 'job/ftk_trunk_test/lastCompletedBuild/testReport'

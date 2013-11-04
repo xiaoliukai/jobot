@@ -5,14 +5,16 @@ HttpClient = require 'scoped-http-client'
 http = ( url, options ) ->
   HttpClient.create( url, options ).header( 'User-Agent', "Hubot/#{@version}" )
 
-api = require './scripts/hudson-test-manager/api'
+HudsonConnection = require('./scripts/hudson-test-manager/hudson_connection.coffee')
+hudson = new HudsonConnection( 'https://solic1.dev.8d.com:8443' )
 
-api.getBuildStatus( 'ftk_trunk_test', http, ( err, res, body ) ->
+hudson.getTestReport('ftk_trunk_test', http, (err, data) ->
+  #inspect err
+  #inspect data
   if err
-    inspect err, 'Error'
-    inspect body, 'Body'
-  try
-    inspect JSON.parse(body), 'Body'
-  catch error
-    console.log body
+    console.log hudson.errorToString(err)
+  else
+    console.log("Failed tests for #{data.jobName}")
+    for testcase in data.failedTests
+      console.log("#{testcase.url}")
 )
