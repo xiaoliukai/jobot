@@ -25,3 +25,14 @@ module.exports = ( robot ) ->
         for testcase in data.failedTests
           msg.reply( "#{testcase.url}" )
     )
+    
+  watchdog = () ->
+    console.log "Timer triggered"
+    envelope =
+      room: 'mdarveau@jabber.8d.com'
+      user:
+        type: 'chat'
+    
+    robot.send( envelope, "Test" )
+    
+  #setInterval( watchdog, 1000 ) 
