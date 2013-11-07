@@ -1,56 +1,77 @@
-Xmpp    = require 'node-xmpp'
+Xmpp = require 'node-xmpp'
 util = require 'util'
 
-module.exports = ( robot ) ->
+# FIXME There is a timing issue here as we are not sure to be registered before the server starts sending the presence messages.
+# TODO Contribute this to the hubot-xmpp project
+class XmppIdResolverSingleton
+
+  instance = null
   
-  @readPresence = (stanza) =>
-    jid = new Xmpp.JID(stanza.attrs.from)
-    bareJid = jid.bare().toString()
-
-    console.log "bareJid is '#{bareJid}'"
+  @get: ( robot ) ->
+    instance ?= new XmppIdResolver( robot )
+  
+  class XmppIdResolver
+  
+    constructor: ( robot ) ->
+      @robot = robot
+      unless process.env.HUBOT_XMPP_CONFERENCE_DOMAINS
+        console.log "Warning: HUBOT_XMPP_CONFERENCE_DOMAINS was not set. Mapping groupchat user to real user jid will not be possible."
+      @groupchat_domains = process.env.HUBOT_XMPP_CONFERENCE_DOMAINS.split(',' )
     
-    # xmpp doesn't add types for standard available mesages
-    # note that upon joining a room, server will send available
-    # presences for all members
-    # http://xmpp.org/rfcs/rfc3921.html#rfc.section.2.2.1
-    stanza.attrs.type ?= 'available'
-
-    # Parse a stanza and figure out where it came from.
-    getFrom = (stanza) =>
-      if bareJid not in ['deploy@conference.manuel-darveaus-imac.local']
-        from = stanza.attrs.from
-      else
-        # room presence is stupid, and optional for some anonymous rooms
-        # http://xmpp.org/extensions/xep-0045.html#enter-nonanon
-        from = stanza.getChild('x', 'http://jabber.org/protocol/muc#user')?.getChild('item')?.attrs?.jid
-      return from
-
-    switch stanza.attrs.type
-      when 'available'
-        # for now, user IDs and user names are the same. we don't
-        # use full JIDs as user ID, since we don't get them in
-        # standard groupchat messages
-        from = getFrom(stanza)
-        console.log "User id is '#{from}'"
-        return if not from?
-
-        [room, from] = from.split '/'
-
-        # ignore presence messages that sometimes get broadcast
-        console.log "In room '#{room}'"
-        #return if not @messageFromRoom room
-
-        console.log "With jid '#{jid.toString()}'"
-
-        console.log "jid #{jid.toString()} in room #{bareJid} is actually jid #{new Xmpp.JID(getFrom(stanza)).bare().toString()}"
-
-  @read = (stanza) =>
-    console.log 'xmpp-Received'
-    console.log util.inspect stanza, {depth: null, colors: true}
+      # usermap.room.alias=real jid
+      @usermap = {}
+      
+      # Listen to presence messages
+      @robot.adapter.client.on 'stanza', @read
     
-    switch stanza.name
-      when 'presence'
-        @readPresence stanza
+    read: (stanza) =>
+      switch stanza.name
+        when 'presence'
+          @readPresence stanza
+      
+    readPresence: (stanza) =>
+      # xmpp doesn't add types for standard available mesages
+      # note that upon joining a room, server will send available
+      # presences for all members
+      # http://xmpp.org/rfcs/rfc3921.html#rfc.section.2.2.1
+      stanza.attrs.type ?= 'available'
+  
+      switch stanza.attrs.type
+        when 'available'
+          # jid.user@jid.domain/jid.resource
+          from_jid = new Xmpp.JID(stanza.attrs.from)
+          
+          # Process only goup chat
+          return unless from_jid.domain in @groupchat_domains
+          
+          # Get the real JID (see http://xmpp.org/extensions/xep-0045.html#enter-nonanon)
+          realJIDAttribute = stanza.getChild('x', 'http://jabber.org/protocol/muc#user')?.getChild('item')?.attrs?.jid
+          
+          unless realJIDAttribute
+            console.lgo "Could not get real JID for group chat. Make sure the server is configured to bradcast real jid for groupchat"
+          
+          # Keep the mapping
+          room = "#{from_jid.user}@#{from_jid.domain}"
+          alias = "#{from_jid.resource}"
+          # Keep only the user@domain part of the real jid
+          realJID = new Xmpp.JID( realJIDAttribute )
+          @usermap[room]?={}
+          @usermap[room][alias]="#{realJID.user}@#{realJID.domain}"
+          
+          console.log "#{from_jid.resource} in #{from_jid.user}@#{from_jid.domain} is actually #{realJID.user}@#{realJID.domain}"
+  
+          
+    #
+    # Public API:
+    #
+          
+    getRealJIDFromGroupchatJID: ( jid ) =>
+      jid = new Xmpp.JID( jid )
+      return @getRealJIDFromRoomAndAlias "#{jid.user}@#{jid.domain}", jid.resource
     
-  robot.adapter.client.on 'stanza', @.read
-  return
+    getRealJIDFromRoomAndAlias: (room, alias) =>
+      return null unless @usermap[room]
+      return @usermap[room][alias]
+
+module.exports = (robot) ->
+  XmppIdResolverSingleton.get( robot )

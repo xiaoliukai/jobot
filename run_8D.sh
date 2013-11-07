@@ -9,9 +9,10 @@ if [ -z "$HUBOT_XMPP_PASSWORD" ]; then
     echo $HUBOT_XMPP_PASSWORD
 fi  
 
+export HUBOT_XMPP_CONFERENCE_DOMAINS=conference.jabber.8d.com
 export HUBOT_XMPP_USERNAME=jobot@jabber.8d.com
 export HUBOT_XMPP_ROOMS=jobottest@conference.jabber.8d.com
 export HUBOT_XMPP_HOST=jabber.8d.com
 export HUBOT_XMPP_PORT=5222
 
-./bin/hubot -i jobot -a xmpp
+./bin/hubot -n jobot -a xmpp
