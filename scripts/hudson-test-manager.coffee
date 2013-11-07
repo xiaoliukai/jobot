@@ -23,5 +23,4 @@ module.exports = ( robot ) ->
       else
         msg.reply( "Failed tests for #{data.jobName}" )
         for testcase in data.failedTests
-          msg.reply( "#{testcase.url}" )
-    )
+          msg.reply( "#{testcase.url}" ) )
