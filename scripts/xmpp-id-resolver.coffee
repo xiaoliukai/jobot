@@ -14,12 +14,14 @@ class XmppIdResolverSingleton
   
     constructor: ( robot ) ->
       @robot = robot
-      unless process.env.HUBOT_XMPP_CONFERENCE_DOMAINS
-        console.log "Warning: HUBOT_XMPP_CONFERENCE_DOMAINS was not set. Mapping groupchat user to real user jid will not be possible."
-      @groupchat_domains = process.env.HUBOT_XMPP_CONFERENCE_DOMAINS.split(',' )
-    
+      
       # usermap.room.alias=real jid
       @usermap = {}
+      
+      unless process.env.HUBOT_XMPP_CONFERENCE_DOMAINS
+        console.log "Warning: HUBOT_XMPP_CONFERENCE_DOMAINS was not set. Mapping groupchat user to real user jid will not be possible."
+        return
+      @groupchat_domains = process.env.HUBOT_XMPP_CONFERENCE_DOMAINS.split(',' )
       
       # Listen to presence messages
       @robot.adapter.client.on 'stanza', @read
