@@ -1,6 +1,8 @@
 Dependencies:
   * Require patched hubot to forward http options and HUBOT_ADAPTER_PATH workaround. See https://github.com/MacKeeper/hubot
   * Require patched scoped-http-client to accept 'rejectUnauthorized: false'. See https://github.com/MacKeeper/node-scoped-http-client
+  * Require redis. Install from http://redis.io/ and run redis-server
+  * Require
 
 To use forks of 'hubot' and 'scoped-http-client':
   * In 'hubot' and 'node-scoped-http-client' repo, run 'npm link'
