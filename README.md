@@ -14,7 +14,7 @@ Configure IntelliJ:
   * Install coffeescript plugin
   * Install File watcher plugin
   * To run a .coffee file, edit the default run configuration for node and check the 'Run with coffeescript plugin'.
-    * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffeescript' and the executable should be '/usr/local/bin/coffee'
+    * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffee-script' and the executable should be '/usr/local/bin/coffee'
   * To debug a .coffee file
     * In Projects Settings, File Watcher, add a coffeescript file watcher (_coffeescript_ *not* coffeescript source map)
       * Uncheck 'Immediate file synchronization'
