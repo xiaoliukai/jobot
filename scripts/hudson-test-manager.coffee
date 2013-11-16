@@ -26,29 +26,6 @@
 # Notes: 
 #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project 
 #   (same codebase/branch) but with different scope. This allows to avoid collision/test assignment duplication.
-#
-# Datastructure in brain:
-# test-watch
-#   ftk-master
-#     room: backoffice
-#     lastBroadcastDate: date
-#     lastBroadcastTests[]: Id used in last broadcast to room. Reset each time a broadcast to room is made
-#     lastBroadcastTests[0]: com.eightd.ftk.some.test
-#     lastBroadcastTests[1]: com.eightd.ftk.some.other.test
-#     manager: mdarveau@jabber.8d.com
-#     fix-delay
-#       warning: 24h
-#       escalade: 96h
-#     builds
-#       ftk-master-test-bike
-#         tests[com.eightd.ftk.some.test]
-#           failSinceDate: firstFailDate
-#           assignee: jfcroteau - Used assigned to test or undefined if none
-#           assignDate: date - When the test was assigned
-#         tests[com.eightd.some.other.test]
-#           failSinceDate: firstFailDate
-#           assignee: null
-#   TODO: add history
 # 
 # Author: 
 #   Manuel Darveau
@@ -57,20 +34,9 @@
 util = require( 'util' )
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
 
-backend = require( './hudson-test-manager/backend' )
 routes = require( './hudson-test-manager/routes' )
 
 class HudsonTestManager
-
-  # Constants for "routes"
-  @BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$ = /Broadcast failed tests for project {} to room {}/i
-  @STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$ = /Stop broadcasting failed tests for project {} to room {}/i
-  @WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$ = /Watch failed tests for project {} using build {}/i
-  @STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$ = /Stop watching failed tests of build {} for project {}/i
-  @SET_MANAGER_FOR_PROJECT_$_TO_$ = /Set manager for project {} to {}/i
-  @SET_WARNING_OR_ESCALADE_TEST_FIX_DELAY_FOR_PROJECT_$_TO_$_HOURS_OR_DAY = /Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s)/i
-  @ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME = /Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser}/i
-  @SHOW_TEST_REPORT_FOR_PROJECT_$ = /Show test report for project {}/i
 
   constructor: ( @robot ) ->
     unless process.env.HUDSON_TEST_MANAGER_URL
@@ -79,6 +45,8 @@ class HudsonTestManager
 
     @xmppIdResolver = require( './xmpp-id-resolver' )( @robot )
     @hudson = new HudsonConnection( process.env.HUDSON_TEST_MANAGER_URL )
+
+    @backend = require( './hudson-test-manager/backend' )( @robot )
 
     #
     # Initial technological testing
@@ -122,39 +90,60 @@ class HudsonTestManager
     # Setup watchdog
     setInterval( @.watchdog, 5 * 60 * 1000 )
 
+  # TODO Add validations on ROOM for @conf... or add @conf... automatically  
+  
   # Setup "jabber" routes
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
-    robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) ->
-      console.log "Not implemented"
+    robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
+      project = msg.match[1]
+      room = msg.match[2]
+      @backend.broadcastTestToRoom project, room
+      msg.reply( "Will broadcast test failures of #{project} to room #{room}" )
 
     # Tell Hubot to stop broadcast test results to the specified room.
-    robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) ->
-      console.log "Not implemented"
+    robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$, ( msg ) =>
+      project = msg.match[1]
+      @backend.broadcastTestToRoom project, undefined
+      msg.reply( "Won't broadcast test failures of #{project}" )
 
     # Monitor tests for the specified build which is part of specified project.
-    robot.respond routes.WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$, ( msg ) ->
-      console.log "Not implemented"
+    robot.respond routes.WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$, ( msg ) =>
+      project = msg.match[1]
+      build = msg.match[2]
+      @backend.watchBuildForProject build, project
+      msg.reply( "Will watch build #{build} in scope of #{project}" )
 
     # Stop monitoring tests for the specified build which is part of specified project.
-    robot.respond routes.STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) ->
-      console.log "Not implemented"
+    robot.respond routes.STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
+      project = msg.match[1]
+      build = msg.match[2]
+      @backend.stopWatchingBuildForProject build, project
+      msg.reply( "Won't watch build #{build} in scope of #{project} anymore" )
 
     # Set the project's manager
-    robot.respond routes.SET_MANAGER_FOR_PROJECT_$_TO_$, ( msg ) ->
+    robot.respond routes.SET_MANAGER_FOR_PROJECT_$_TO_$, ( msg ) =>
       # TODO For security reason, must be sent in groupchat
-      console.log "Not implemented"
+      project = msg.match[1]
+      manager = msg.match[2]
+      @backend.setManagerForProject manager, project
+      msg.reply( "#{manager} in now manager of project #{project}" )
 
     # Configure warning or escalade threshold. Accepted only if from project manager
-    robot.respond routes.SET_WARNING_OR_ESCALADE_TEST_FIX_DELAY_FOR_PROJECT_$_TO_$_HOURS_OR_DAY, ( msg ) ->
-      console.log "Not implemented"
+    robot.respond routes.SET_WARNING_OR_ESCALADE_TEST_FIX_DELAY_FOR_PROJECT_$_TO_$_HOURS_OR_DAY, ( msg ) =>
+      level = msg.match[1]
+      project = msg.match[2]
+      amount = msg.match[3]
+      unit = msg.match[4]
+      @backend.setThresholdForProject project, level, amount, unit
+      msg.reply( "#{manager} in now manager of project #{project}" )
 
     # Assign a test/range/list of tests to a user
-    robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) ->
+    robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       console.log "Not implemented"
 
     # Display failed test and assignee
-    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) ->
+    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
       console.log "Not implemented"
 
   # Called when a new test result is available
