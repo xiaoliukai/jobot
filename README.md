@@ -1,6 +1,8 @@
 Dependencies:
   * Require patched hubot to forward http options and HUBOT_ADAPTER_PATH workaround. See https://github.com/MacKeeper/hubot
   * Require patched scoped-http-client to accept 'rejectUnauthorized: false'. See https://github.com/MacKeeper/node-scoped-http-client
+  * Require redis. Install from http://redis.io/ and run redis-server
+  * Require
 
 To use forks of 'hubot' and 'scoped-http-client':
   * In 'hubot' and 'node-scoped-http-client' repo, run 'npm link'
@@ -12,7 +14,7 @@ Configure IntelliJ:
   * Install coffeescript plugin
   * Install File watcher plugin
   * To run a .coffee file, edit the default run configuration for node and check the 'Run with coffeescript plugin'.
-    * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffeescript' and the executable should be '/usr/local/bin/coffee'
+    * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffee-script' and the executable should be '/usr/local/bin/coffee'
   * To debug a .coffee file
     * In Projects Settings, File Watcher, add a coffeescript file watcher (_coffeescript_ *not* coffeescript source map)
       * Uncheck 'Immediate file synchronization'
