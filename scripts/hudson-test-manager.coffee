@@ -1,35 +1,4 @@
-##
-# Description
-#   Monitor and dispatch build test failure on hudson
-#
-# Dependencies: 
-#   none 
-# 
-# Configuration:
-#   TODO process.env.HUDSON_TEST_MANAGER_URL
-#   TODO process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15
-#   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24
-#   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96
-# 
-# Commands: 
-#   Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room.
-#   Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room.
-#   Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project.
-#   Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project.
-#
-#   Set manager for project {} to {} - For security reason, must be sent in groupchat
-#   Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager
-#
-#   Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user
-#   Show test report for project {}
-#
-# Notes: 
-#   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project 
-#   (same codebase/branch) but with different scope. This allows to avoid collision/test assignment duplication.
-# 
-# Author: 
-#   Manuel Darveau
-#
+## # Description #   Monitor and dispatch build test failure on hudson # # Dependencies:  #   none  #  # Configuration: #   TODO process.env.HUDSON_TEST_MANAGER_URL #   TODO process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 #  # Commands:  #   Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room. #   Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room. #   Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project. #   Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project. # #   Set manager for project {} to {} - For security reason, must be sent in groupchat #   Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager # #   Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user #   Show test report for project {} # # Notes:  #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project  #   (same codebase/branch) but with different scope. This allows to avoid collision/test assignment duplication. #  # Author:  #   Manuel Darveau #
 
 util = require( 'util' )
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
@@ -48,10 +17,7 @@ class HudsonTestManager
 
     @backend = require( './hudson-test-manager/backend' )( @robot )
 
-    #
-    # Initial technological testing
-    # TODO Remove this after initial tests
-    #
+    # # Initial technological testing # TODO Remove this after initial tests #
 
     # TODO Remove this after initial tests
     robot.respond /.*status for (.*).*/i, ( msg ) =>
@@ -72,17 +38,13 @@ class HudsonTestManager
         else
           msg.reply( "Failed tests for #{data.jobName}" )
           for testcase in data.failedTests
-            msg.reply( "#{testcase.url}" )
-      )
+            msg.reply( "#{testcase.url}" ) )
 
-    # TODO Remove this after initial tests
-    # Example on how to resolve a groupchat message to a specific user message
+    # TODO Remove this after initial tests # Example on how to resolve a groupchat message to a specific user message
     robot.respond /.*test ping me/i, ( msg ) =>
-      sendPrivateMesssage( xmppIdResolver.getRealJIDFromGroupchatJID( msg.envelope.user.jid ), "Ping from #{@robot.name}" )
+      sendPrivateMesssage( xmppIdResolver.getPrivateJID( msg.envelope.user.jid ), "Ping from #{@robot.name}" )
 
-    #
-    # Actual implementation
-    #
+    # # Actual implementation #
 
     # Setup "routes":
     @setupRoutes( robot )
@@ -91,7 +53,9 @@ class HudsonTestManager
     setInterval( @.watchdog, 5 * 60 * 1000 )
 
   # TODO Add validations on ROOM for @conf... or add @conf... automatically  
-  
+
+  # TODO Every backend call should be made with a callback( err, ... )
+
   # Setup "jabber" routes
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
@@ -123,11 +87,14 @@ class HudsonTestManager
 
     # Set the project's manager
     robot.respond routes.SET_MANAGER_FOR_PROJECT_$_TO_$, ( msg ) =>
-      # TODO For security reason, must be sent in groupchat
-      project = msg.match[1]
-      manager = msg.match[2]
-      @backend.setManagerForProject manager, project
-      msg.reply( "#{manager} in now manager of project #{project}" )
+      # For security reason, must be sent in groupchat
+      if xmppIdResolver.isGroupChatJID( msg.envelope.user.jid )
+        project = msg.match[1]
+        manager = msg.match[2]
+        @backend.setManagerForProject manager, project
+        msg.reply( "#{manager} in now manager of project #{project}" )
+      else
+        msg.reply( "For security reason, setting manager must be sent in group chat" )
 
     # Configure warning or escalade threshold. Accepted only if from project manager
     robot.respond routes.SET_WARNING_OR_ESCALADE_TEST_FIX_DELAY_FOR_PROJECT_$_TO_$_HOURS_OR_DAY, ( msg ) =>
@@ -136,10 +103,19 @@ class HudsonTestManager
       amount = msg.match[3]
       unit = msg.match[4]
       @backend.setThresholdForProject project, level, amount, unit
-      msg.reply( "#{manager} in now manager of project #{project}" )
 
     # Assign a test/range/list of tests to a user
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
+      tests = msg.match[1]
+      project = msg.match[2] ? "TODO" # TODO Check room state for latest project announcement
+      user = msg.match[3]
+
+      if user == "Me"
+        user = xmppIdResolver.getPrivateJID( msg.envelope.user.jid )
+      else
+        # TODO Beefup getPrivateJID to accept simple usernames
+        user = xmppIdResolver.getPrivateJID( user )
+        
       console.log "Not implemented"
 
     # Display failed test and assignee

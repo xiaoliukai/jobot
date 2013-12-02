@@ -66,14 +66,23 @@ class XmppIdResolverSingleton
     #
     # Public API:
     #
-          
-    getRealJIDFromGroupchatJID: ( jid ) =>
+    
+    # Return the private chat jid for the specified groupchat jid
+    getPrivateJID: ( jid ) =>
+      # TODO Check if already an Xmpp.JID or a string
       jid = new Xmpp.JID( jid )
+      return jid unless isGroupChatJID( jid )
       return @getRealJIDFromRoomAndAlias "#{jid.user}@#{jid.domain}", jid.resource
     
     getRealJIDFromRoomAndAlias: (room, alias) =>
       return null unless @usermap[room]
       return @usermap[room][alias]
+    
+    # Check if the jid is a groupChat jid
+    isGroupChatJID: ( jid ) =>
+      # TODO Check if already an Xmpp.JID or a string
+      jid = new Xmpp.JID( jid )
+      return jid.domain in @groupchat_domains
 
 module.exports = (robot) ->
   XmppIdResolverSingleton.get( robot )
