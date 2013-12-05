@@ -39,36 +39,46 @@ class HudsonTestManagerBackendSingleton
       callback( storage )
       @robot.brain.set 'HudsonTestManagerBackend', storage
 
-    broadcastTestToRoom: ( project, room ) ->
+    broadcastTestToRoom: ( project, room, callback ) ->
       @persist ( storage )->
         storage[project]?={}
         storage[project].room = room
+        callback( null )
 
-    watchBuildForProject: ( build, project )->
+    watchBuildForProject: ( build, project, callback ) ->
       @persist ( storage )->
         storage[project]?={}
         storage[project].builds?={}
         storage[project].builds[build]?={}
-      
-    stopWatchingBuildForProject: ( build, project )->
+        callback( null )
+
+    stopWatchingBuildForProject: ( build, project, callback ) ->
       @persist ( storage )->
         storage[project]?={}
         storage[project].builds?={}
         delete storage[project].builds[build]
-        
-    setManagerForProject: ( manager, project )->
+        callback( null )
+
+    setManagerForProject: ( manager, project, callback ) ->
       @persist ( storage )->
         storage[project]?={}
-        storage[project].manager=manager
-        
-    setThresholdForProject: ( project, level, amount, unit )->
+        storage[project].manager = manager
+        callback( null )
+
+    setThresholdForProject: ( project, level, amount, unit, callback ) ->
+      unless unit not in ['hour', 'day']
+        callback( "Unit must be 'hour' or 'day'. Got #{unit}" )
+        return
       @persist ( storage )->
-        throw new Error("Unit must be 'hour' or 'day'. Got #{unit}") unless unit not in ['hour', 'day']
         amount *= 24 if unit is "day"
-        
+
         storage[project]?={}
         storage[project].fix_delay?={}
         storage[project].fix_delay[level] = amount
-        
+        callback( null )
+
+    assignTests: ( project, tests, user, callback ) ->
+      callback( null )
+
 module.exports = ( robot ) ->
   HudsonTestManagerBackendSingleton.get( robot )
