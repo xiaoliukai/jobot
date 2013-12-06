@@ -35,6 +35,7 @@ util = require( 'util' )
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
 
 routes = require( './hudson-test-manager/routes' )
+test_manager_util = require( './hudson-test-manager/util' )
 
 class HudsonTestManager
 
@@ -45,9 +46,12 @@ class HudsonTestManager
 
     # Store non persistent state such as conversation and announcements
     # state[roomname]
+    #   [projectname]
+    #     failedtests: List of String
     #   lastannouncement
-    #     time
-    #     projectname
+    #     time: Date
+    #     projectname: String
+    #     failedtests: List of String
     @state = {}
 
     @xmppIdResolver = require( './xmpp-id-resolver' )( @robot )
@@ -151,7 +155,7 @@ class HudsonTestManager
 
     # Assign a test/range/list of tests to a user
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
-      tests = msg.match[1]
+      testsString = msg.match[1]
       project = msg.match[2] ? @getLastAnnouncement( @xmppIdResolver.getGroupChatRoomName( msg.envelope.user.jid ) )
       user = msg.match[3]
 
@@ -169,13 +173,15 @@ class HudsonTestManager
         msg.reply( "Sorry, I don't know user '#{user}'" )
         return
 
-      # TODO Parse tests
-
-      @backend.assignTests project, tests, user, ( err ) ->
+      test_manager_util.parseTestString testsString, ( err, tests ) ->
         if err
-          msg.reply( "Error: #{err}" )
+          msg.reply( "Sorry but I don't understand which tests you would like to get assigned (got '#{testsString}'). Tell me something like: 1, 2-5, com.some.Test" )
         else
-          msg.reply( "Ack. Tests assigned to #{user}" )
+          @backend.assignTests project, tests, user, ( err ) ->
+            if err
+              msg.reply( "Oops!: #{err}" )
+            else
+              msg.reply( "Ack. Tests assigned to #{user}" )
 
     # Display failed test and assignee
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
@@ -188,11 +194,16 @@ class HudsonTestManager
   getLastAnnouncement: ( roomname ) ->
     return @state[roomname]?.lastannouncement
 
-  setLastAnnouncement: ( roomname, projectname ) ->
+  getAnnouncement: ( projectname ) ->
+    return @state[roomname]?[projectname]
+
+  storeAnnouncement: ( roomname, projectname, tests ) ->
     @state[roomname]?={}
     @state[roomname].lastannouncement?={}
     @state[roomname].lastannouncement.time = new Date()
     @state[roomname].lastannouncement.projectname = projectname
+    @state[roomname].lastannouncement.failedtests
+    @state[roomname][projectname].failedtests = tests
 
   # Called when a new test result is available
   reportFailedTests: ( projectname, testResults ) ->
@@ -201,7 +212,9 @@ class HudsonTestManager
     #     1 - http...
     #     2 - http...
     roomname = "TODO"
-    @setLastAnnouncement roomname projectname
+    # TODO Filter out assigned tests from tests
+    @storeAnnouncement roomname projectname tests
+  # TODO Persist failed tests to backend
 
   # Notify which tests are not assigned. Can be used to send on demand, broadcast to room or escalade to manager
   notifyUnassignedTest: ( projectname, to_jid ) ->
@@ -211,7 +224,7 @@ class HudsonTestManager
     #   1 - http...
     #   2 - http...
     roomname = "TODO"
-    @setLastAnnouncement roomname projectname
+    @storeAnnouncement roomname projectname tests
 
   # Notify of test fail past warning threshold
   notifyTestStillFail: ( projectname, to_jid ) ->

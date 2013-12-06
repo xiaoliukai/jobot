@@ -1,3 +1,5 @@
+util = require( 'util' )
+
 # Datastructure in brain:
 # HudsonTestManagerBackend
 #   projectname: (ie: 'ftk-master')
@@ -36,34 +38,56 @@ class HudsonTestManagerBackendSingleton
     persist: ( callback ) ->
       storage = @robot.brain.get 'HudsonTestManagerBackend'
       storage?={}
+      storage.projects?={}
       callback( storage )
       @robot.brain.set 'HudsonTestManagerBackend', storage
+      # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
+
+    readstorage: ( callback ) ->
+      storage = @robot.brain.get 'HudsonTestManagerBackend'
+      storage?={}
+      storage.projects?={}
+      callback( storage )
 
     broadcastTestToRoom: ( project, room, callback ) ->
       @persist ( storage )->
-        storage[project]?={}
-        storage[project].room = room
-        callback( null )
+        storage.projects[project]?={}
+        storage.projects[project].room = room
+      callback( null )
 
     watchBuildForProject: ( build, project, callback ) ->
       @persist ( storage )->
-        storage[project]?={}
-        storage[project].builds?={}
-        storage[project].builds[build]?={}
-        callback( null )
+        storage.projects[project]?={}
+        storage.projects[project].builds?={}
+        storage.projects[project].builds[build]?={}
+      callback( null )
 
     stopWatchingBuildForProject: ( build, project, callback ) ->
       @persist ( storage )->
-        storage[project]?={}
-        storage[project].builds?={}
-        delete storage[project].builds[build]
-        callback( null )
+        storage.projects[project]?={}
+        storage.projects[project].builds?={}
+        delete storage.projects[project].builds[build]
+      callback( null )
+
+    #
+    # Return a map with project name as key
+    #
+    getProjects: ( callback ) ->
+      @readstorage ( storage ) ->
+        callback null, storage.projects
+
+    #
+    # Return a map with build name as key
+    #
+    getBuildsForProject: ( project, callback ) ->
+      @readstorage ( storage ) ->
+        callback null, storage.projects[project].builds
 
     setManagerForProject: ( manager, project, callback ) ->
       @persist ( storage )->
-        storage[project]?={}
-        storage[project].manager = manager
-        callback( null )
+        storage.projects[project]?={}
+        storage.projects[project].manager = manager
+      callback( null )
 
     setThresholdForProject: ( project, level, amount, unit, callback ) ->
       unless unit not in ['hour', 'day']
@@ -72,12 +96,50 @@ class HudsonTestManagerBackendSingleton
       @persist ( storage )->
         amount *= 24 if unit is "day"
 
-        storage[project]?={}
-        storage[project].fix_delay?={}
-        storage[project].fix_delay[level] = amount
-        callback( null )
+        storage.projects[project]?={}
+        storage.projects[project].fix_delay?={}
+        storage.projects[project].fix_delay[level] = amount
+      callback( null )
 
+    #
+    # Store currently failling tests for a project.
+    # Callback: err, fixedTests, newFailedTest, currentFailedTest
+    # All lists are map with test name as key and value if an object defined as:
+    #   since: Date
+    #   assigned: String
+    #
+    persistFailedTests: ( project, tests, callback ) ->
+      @persist ( storage )->
+        storage.projects[project]?={}
+        previousFailedTest = storage.projects[project].failedtests
+        currentFailedTest = []
+        newFailedTest = []
+
+        # Copy current assignment if any
+        for test in tests
+          if previousFailedTest?[test]
+            # Was already failling
+            currentFailedTest[test] = previousFailedTest?[test]
+            delete previousFailedTest?[test]
+          else
+            # New failed test
+            currentFailedTest[test] =
+              since: new Date()
+            newFailedTest.push test
+
+        # Only have fixed tests remaining
+        fixedTests = previousFailedTest
+
+        # Store current test fail
+        storage.projects[project].failedtests = currentFailedTest
+      callback( null, fixedTests, newFailedTest, currentFailedTest )
+
+    #
+    # Assign the specified list of tests to the user
+    #
     assignTests: ( project, tests, user, callback ) ->
+      for test in tests
+        storage.projects[project]?.failedtests?[test]?.assigned = user
       callback( null )
 
 module.exports = ( robot ) ->

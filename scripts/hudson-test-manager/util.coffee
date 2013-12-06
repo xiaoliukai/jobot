@@ -1,4 +1,4 @@
-testStringFormat = /(?:(?:\d+|\d+-\d+|[\w\.]+),?)+/i
+testStringFormat = /^(\s*(\d+|\d+\s*-\s*\d+|[\w\.]+)\s*,?\s*)+$/i
 
 module.exports.parseTestString = ( testString, callback ) ->
   unless testString.match( testStringFormat )
