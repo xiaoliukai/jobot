@@ -23,5 +23,6 @@ Configure IntelliJ:
     * Edit the default run configuration for node and *uncheck* the 'Run with coffeescript plugin'.
       * On the generated .js file, run in debug and the .coffee file breakpoints will trigger.
       * Note: debugging feels a bit experimental. You can also add breakpoints in the .js file
+  * Formatter, keep comment at first column: checked
 
 

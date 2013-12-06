@@ -19,7 +19,7 @@ util = require( 'util' )
 #           assignee: jfcroteau - Used assigned to test or undefined if none
 #           assignDate: date - When the test was assigned
 #         tests[com.eightd.some.other.test]
-#           failSinceDate: firstFailDate
+#           failSinceDate: firstFailDate 
 #           assignee: null
 #   TODO: add history
 
@@ -41,7 +41,7 @@ class HudsonTestManagerBackendSingleton
       storage.projects?={}
       callback( storage )
       @robot.brain.set 'HudsonTestManagerBackend', storage
-      # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
+    # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
 
     readstorage: ( callback ) ->
       storage = @robot.brain.get 'HudsonTestManagerBackend'
@@ -89,9 +89,14 @@ class HudsonTestManagerBackendSingleton
         storage.projects[project].manager = manager
       callback( null )
 
+    getManagerForProject: ( project, callback ) ->
+      @readstorage ( storage )->
+        storage.projects[project]?={}
+        callback null, storage.projects[project]?.manager
+
     setThresholdForProject: ( project, level, amount, unit, callback ) ->
-      unless unit not in ['hour', 'day']
-        callback( "Unit must be 'hour' or 'day'. Got #{unit}" )
+      unless unit in [ 'hour', 'day' ]
+        callback( "Unit must be 'hour' or 'day'. Got '#{unit}'" )
         return
       @persist ( storage )->
         amount *= 24 if unit is "day"
@@ -102,18 +107,28 @@ class HudsonTestManagerBackendSingleton
       callback( null )
 
     #
+    # Return the threshold for the specified level in hours
+    #
+    getThresholdForProject: ( project, level, callback ) ->
+      @readstorage ( storage )->
+        storage.projects[project]?={}
+        callback null, storage.projects[project]?.fix_delay?[level]
+
+    #
     # Store currently failling tests for a project.
+    # tests: Array of string representing test name
     # Callback: err, fixedTests, newFailedTest, currentFailedTest
-    # All lists are map with test name as key and value if an object defined as:
+    # All lists are objects with test name as key and value if an object defined as:
     #   since: Date
     #   assigned: String
     #
     persistFailedTests: ( project, tests, callback ) ->
+      currentFailedTest = {}
+      newFailedTest = {}
+      fixedTests = {}
       @persist ( storage )->
         storage.projects[project]?={}
         previousFailedTest = storage.projects[project].failedtests
-        currentFailedTest = []
-        newFailedTest = []
 
         # Copy current assignment if any
         for test in tests
@@ -125,22 +140,46 @@ class HudsonTestManagerBackendSingleton
             # New failed test
             currentFailedTest[test] =
               since: new Date()
-            newFailedTest.push test
+            newFailedTest[test] = currentFailedTest[test]
 
-        # Only have fixed tests remaining
-        fixedTests = previousFailedTest
-
+        # Copy remaining tests as fixed tests
+        for test, state of previousFailedTest
+          fixedTests[test] = state
+            
         # Store current test fail
         storage.projects[project].failedtests = currentFailedTest
+        
       callback( null, fixedTests, newFailedTest, currentFailedTest )
+
+    getFailedTests: ( project, callback ) ->
+      @readstorage ( storage ) ->
+        assigned = {}
+        unassigned = {}
+        for test, state of storage.projects[project].failedtests
+          unassigned[test] = state if not state.assigned
+          assigned[test] = state if state.assigned
+        callback null, storage.projects[project].failedtests, unassigned, assigned
 
     #
     # Assign the specified list of tests to the user
+    # tests: Array of string representing test name
     #
     assignTests: ( project, tests, user, callback ) ->
-      for test in tests
-        storage.projects[project]?.failedtests?[test]?.assigned = user
+      @persist ( storage )->
+        for test in tests
+          storage.projects[project]?.failedtests?[test]?.assigned = user
+          storage.projects[project]?.failedtests?[test]?.assignedDate = new Date()
       callback( null )
 
+    #
+    # Return all assigned tests for the user.
+    # Return: object with projectname as key and value is object with definition:
+    #  project: String project name
+    #  test: String test name
+    #  assignedDate: Date when was the test assigned 
+    #
+    getAssignedTests: ( user, callback ) ->
+      # TODO
+      
 module.exports = ( robot ) ->
   HudsonTestManagerBackendSingleton.get( robot )

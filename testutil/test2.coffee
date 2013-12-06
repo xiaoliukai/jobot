@@ -1,7 +1,9 @@
 
-previousTestFail = []
-previousTestFail.push "a"
-previousTestFail.push "b"
+previousTestFail = {}
+previousTestFail['test1'] =
+  a: "allo"
+previousTestFail['test2'] =
+  a: "toi"
 
-for fixedtest, val of previousTestFail
-  console.log fixedtest + " " + val
+for test, value of previousTestFail
+  console.log "#{test} is #{value}"

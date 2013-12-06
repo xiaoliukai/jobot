@@ -92,7 +92,7 @@ class HudsonTestManager
     @setupRoutes( robot )
 
     # Setup watchdog
-    setInterval( @.watchdog, 5 * 60 * 1000 )
+    setInterval( @.watchdog, 1 * 60 * 1000 )
 
   # TODO Add validations on ROOM for @conf... or add @conf... automatically  
 
@@ -185,6 +185,7 @@ class HudsonTestManager
 
     # Display failed test and assignee
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
+      # TODO
       console.log "Not implemented"
 
   # Return the last announcement for a given room name
