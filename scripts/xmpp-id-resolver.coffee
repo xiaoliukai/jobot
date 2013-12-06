@@ -16,7 +16,7 @@ class XmppIdResolverSingleton
       @robot = robot
 
       # usermap.room.alias=real jid
-      @usermap = {}
+      @usermap = {} 
 
       unless process.env.HUBOT_XMPP_CONFERENCE_DOMAINS
         console.log "Warning: HUBOT_XMPP_CONFERENCE_DOMAINS was not set. Mapping groupchat user to real user jid will not be possible."
@@ -24,9 +24,10 @@ class XmppIdResolverSingleton
       @groupchat_domains = process.env.HUBOT_XMPP_CONFERENCE_DOMAINS.split( ',' )
 
       # Listen to presence messages
-      @robot.adapter.client.on 'stanza', @read
+      @robot.adapter.client.on 'stanza', (stanza) =>
+        @read stanza
 
-    read: ( stanza ) ->
+    read: ( stanza ) =>
       switch stanza.name
         when 'presence'
           @readPresence stanza
@@ -68,9 +69,9 @@ class XmppIdResolverSingleton
     #
 
     # Return the private chat jid for the specified groupchat jid
-    getPrivateJID: ( jid ) ->
+    getPrivateJID: ( jid ) =>
       jid = new Xmpp.JID( jid ) unless jid instanceof Xmpp.JID
-      return jid unless @isGroupChatJID( jid )
+      return jid unless isGroupChatJID( jid )
       return @getRealJIDFromRoomAndAlias "#{jid.user}@#{jid.domain}", jid.resource
 
     getRealJIDFromRoomAndAlias: ( room, alias ) ->
@@ -78,7 +79,7 @@ class XmppIdResolverSingleton
       return @usermap[room][alias]
 
     # Check if the jid is a groupChat jid
-    isGroupChatJID: ( jid ) ->
+    isGroupChatJID: ( jid ) =>
       jid = new Xmpp.JID( jid ) unless jid instanceof Xmpp.JID
       return jid.domain in @groupchat_domains
 

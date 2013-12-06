@@ -109,7 +109,7 @@ class HudsonTestManager
         msg.reply( "Will broadcast test failures of #{project} to room #{room}" ) unless err
 
     # Tell Hubot to stop broadcast test results to the specified room.
-    robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$, ( msg ) =>
+    robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       project = msg.match[1]
       @backend.broadcastTestToRoom project, undefined, ( err ) ->
         msg.reply( "Error: #{err}" ) if err
