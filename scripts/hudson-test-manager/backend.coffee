@@ -174,12 +174,27 @@ class HudsonTestManagerBackendSingleton
     #
     # Return all assigned tests for the user.
     # Return: object with projectname as key and value is object with definition:
-    #  project: String project name
-    #  test: String test name
+    #  failedtests: Key is test name, value is object with definition
+    #    since: Date of first test failure
+    #    assigned: User assigned
+    #    assignedDate: Date of assignment
     #  assignedDate: Date when was the test assigned 
     #
     getAssignedTests: ( user, callback ) ->
-      # TODO
+      assignedtests = {}
+      @readstorage ( storage ) ->
+        for projectname, project of storage.projects
+          for testname, test of project.failedtests
+            if test.assigned is user
+              assignedtests[projectname]?={}
+              assignedtests[projectname].failedtests?={}
+              assignedtests[projectname].failedtests[testname] = 
+                since: test.since
+                assigned: test.assigned
+                assignedDate: test.assignedDate
+            
+      callback null, assignedtests
+        
       
 module.exports = ( robot ) ->
   HudsonTestManagerBackendSingleton.get( robot )

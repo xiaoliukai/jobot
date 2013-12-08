@@ -1,4 +1,5 @@
 assert = require( 'assert' )
+util = require( 'util' )
 
 {User, Brain} = require 'hubot'
 
@@ -108,5 +109,12 @@ robot.brain = new Brain( robot )
 @backend.getFailedTests "myproject", ( err, failedTest ) ->
   assert.ifError err
   assert.strictEqual failedTest['com.test3'].assigned, "myuser"
+
+@backend.getAssignedTests "myuser", ( err, assignedTests ) ->
+  assert.ifError err
+  assert.strictEqual Object.keys( assignedTests ).length, 1
+  assert.strictEqual Object.keys( assignedTests["myproject"].failedtests ).length, 1
+  assert assignedTests["myproject"].failedtests['com.test3']
+  assert.strictEqual assignedTests["myproject"].failedtests['com.test3'].assigned, "myuser"
 
 console.log "Success"
