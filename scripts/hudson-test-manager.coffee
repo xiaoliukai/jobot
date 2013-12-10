@@ -69,19 +69,6 @@ class HudsonTestManager
         msg.reply( hudson.errorToString err ) if err
         msg.reply( "#{jobName} (build #{data.number}) is #{data.result}. See #{data.url}" ) if !err )
 
-    # TODO Remove this after initial tests
-    robot.respond /.*test report for (.*).*/i, ( msg ) =>
-      jobName = msg.match[1]
-      console.log "Test report requested for #{jobName}"
-      msg.reply( "In progress..." )
-      hudson.getTestReport( jobName, @robot.http, ( err, data ) =>
-        if err
-          msg.reply( hudson.errorToString err )
-        else
-          msg.reply( "Failed tests for #{data.jobName}" )
-          for testcase in data.failedTests
-            msg.reply( "#{testcase.url}" ) )
-
     # TODO Remove this after initial tests # Example on how to resolve a groupchat message to a specific user message
     robot.respond /.*test ping me/i, ( msg ) =>
       sendPrivateMesssage( @xmppIdResolver.getPrivateJID( msg.envelope.user.jid ), "Ping from #{@robot.name}" )

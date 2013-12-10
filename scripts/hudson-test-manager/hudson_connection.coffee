@@ -46,7 +46,7 @@ class HudsonConnection
       else if err.res.statusCode != 200
         return "Unknown error (#{err.res.statusCode}): #{err.body}"
     else
-      inspect err
+      console.log inspect err
       return err
 
   #
@@ -75,13 +75,11 @@ class HudsonConnection
     return
 
   # Get the test report for a specific job
-  # .jobName: 'jobName'
-  # .failedTests: [testcase]
-  # 
-  # testcase:
-  #   .className
-  #   .name
-  #   .url
+  # return:
+  #   jobName: String the project or 'job' name
+  #   failedTests: Map with key=testname, value=
+  #     name: String of the test Class name
+  #     url: The URL to the test report
   getTestReport: ( jobName, http, jsonCallback ) ->
     hudson_url = @hudson_url
     req = @authRequest( http, "#{@hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/api/json" )
@@ -90,14 +88,16 @@ class HudsonConnection
       result.jobName = jobName
 
       # Get failed tests
-      result.failedTests = []
+      result.failedTests = {}
       for suite in res.suites
         for testcase in suite.cases
           if testcase.status == 'FAILED'
+            # The package name is in a separate path element than test Class name
             lastDot = testcase.className.lastIndexOf( '.' )
             urlPath = testcase.className.substring( 0, lastDot ) + '/' + testcase.className.substring( lastDot + 1 )
-            testcase.url = "#{hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/#{urlPath}/#{testcase.name}"
-            result.failedTests.push testcase
+            result.failedTests[testcase.className] =
+              name: testcase.className
+              url: "#{hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/#{urlPath}/#{testcase.name}"
 
       return result
     @getJson req, jsonCallback, builder
