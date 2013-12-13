@@ -51,7 +51,7 @@ class XmppIdResolverSingleton
           realJIDAttribute = stanza.getChild( 'x', 'http://jabber.org/protocol/muc#user' )?.getChild( 'item' )?.attrs?.jid
 
           unless realJIDAttribute
-            console.lgo "Could not get real JID for group chat. Make sure the server is configured to bradcast real jid for groupchat"
+            console.log "Could not get real JID for group chat. Make sure the server is configured to bradcast real jid for groupchat"
 
           # Keep the mapping
           room = "#{from_jid.user}@#{from_jid.domain}"
