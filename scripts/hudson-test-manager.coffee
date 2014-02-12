@@ -54,7 +54,6 @@ class HudsonTestManager
     #     failedtests: List of String
     @state = {}
 
-    @xmppIdResolver = require( './xmpp-id-resolver' )( @robot )
     @hudson = new HudsonConnection( process.env.HUDSON_TEST_MANAGER_URL )
 
     @backend = require( './hudson-test-manager/backend' )( @robot )
@@ -69,9 +68,10 @@ class HudsonTestManager
         msg.reply( hudson.errorToString err ) if err
         msg.reply( "#{jobName} (build #{data.number}) is #{data.result}. See #{data.url}" ) if !err )
 
-    # TODO Remove this after initial tests # Example on how to resolve a groupchat message to a specific user message
+    # TODO Remove this after initial tests
+    # Example on how to resolve a groupchat message to a specific user message
     robot.respond /.*test ping me/i, ( msg ) =>
-      sendPrivateMesssage( @xmppIdResolver.getPrivateJID( msg.envelope.user.jid ), "Ping from #{@robot.name}" )
+      sendPrivateMesssage( msg.envelope.user.privateChatJID, "Ping from #{@robot.name}" )
 
     # # Actual implementation #
 
@@ -121,7 +121,7 @@ class HudsonTestManager
     # Set the project's manager
     robot.respond routes.SET_MANAGER_FOR_PROJECT_$_TO_$, ( msg ) =>
       # For security reason, must be sent in groupchat
-      if @xmppIdResolver.isGroupChatJID( msg.envelope.user.jid )
+      if msg.envelope.user.type == 'groupchat'
         project = msg.match[1]
         manager = msg.match[2]
         @backend.setManagerForProject manager, project, ( err ) ->
@@ -143,7 +143,7 @@ class HudsonTestManager
     # Assign a test/range/list of tests to a user
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       testsString = msg.match[1]
-      project = msg.match[2] ? @getLastAnnouncement( @xmppIdResolver.getGroupChatRoomName( msg.envelope.user.jid ) )
+      project = msg.match[2] ? @getLastAnnouncement( msg.envelope.user.room )
       user = msg.match[3]
 
       unless project
@@ -151,10 +151,10 @@ class HudsonTestManager
         return
 
       if user == "Me"
-        user = @xmppIdResolver.getPrivateJID( msg.envelope.user.jid )
+        user = msg.envelope.user.privateChatJID
       else
-        # TODO Beefup getPrivateJID to accept simple usernames
-        user = @xmppIdResolver.getPrivateJID( user )
+        # TODO Map simple usernames to private JID. Not sure if hubot's brain can help here
+        user = msg.envelope.user.privateChatJID
 
       unless user
         msg.reply( "Sorry, I don't know user '#{user}'" )

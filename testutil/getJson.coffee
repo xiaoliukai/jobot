@@ -21,4 +21,4 @@ printJson = (path) ->
 
 #printJson 'job/ftk_trunk_test'
 #printJson 'job/ftk_trunk_test/lastCompletedBuild'
-printJson 'job/ftk_trunk_test/lastCompletedBuild/testReport'
+printJson 'job/ftk_master_test/lastCompletedBuild/testReport'
