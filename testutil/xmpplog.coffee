@@ -82,9 +82,9 @@ options =
   #
   #    console.log "jid #{jid.toString()} in room #{bareJid} is actually jid #{new Xmpp.JID(getFrom(stanza)).bare().toString()}"
 
-@read = ( param ) =>
+@read = ( stanza ) =>
   console.log 'Stanza:'
-  console.log param.toString
+  console.log stanza.toString
 
   switch stanza.name
     when 'presence'

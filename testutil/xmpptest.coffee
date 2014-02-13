@@ -2,17 +2,17 @@ Xmpp = require 'node-xmpp'
 util = require 'util'
 
 robot_name = 'jobot'
-#room = 'testing@conference.mdarveau.usine.8d.com'
-room_to_join = 'jobottest@conference.jabber.8d.com'
+room_to_join = 'deploy@conference.manuel-darveaus-imac.local'
+#room_to_join = 'jobottest@conference.jabber.8d.com'
 
 @client = new Xmpp.Client
   reconnect: true
   #jid: 'testbot@mdarveau.usine.8d.com'
   #password: 'testbot'
   #host: 'localhost'
-  jid: 'jobot@jabber.8d.com'
-  password: 'Ve5jpN9FVwQ'
-  host: 'jabber.8d.com'
+  jid: 'hubot@manuel-darveaus-imac.local'
+  password: 'hubot'
+  host: 'localhost'
   port: 5222
   legacySSL: process.env.HUBOT_XMPP_LEGACYSSL
   preferredSaslMechanism: process.env.HUBOT_XMPP_PREFERRED_SASL_MECHANISM
