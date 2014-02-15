@@ -11,18 +11,19 @@ To use forks of 'hubot' and 'scoped-http-client':
     * Environment variable HUBOT_ADAPTER_PATH is set in the launchers to workaround this
 
 Configure IntelliJ:
-  * Install coffeescript plugin
+  * --Install coffeescript plugin-- Run 'coffee -cmw .' in the root directory
   * Install File watcher plugin
   * To run a .coffee file, edit the default run configuration for node and check the 'Run with coffeescript plugin'.
     * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffee-script' and the executable should be '/usr/local/bin/coffee'
   * To debug a .coffee file
-    * In Projects Settings, File Watcher, add a coffeescript file watcher (_coffeescript_ *not* coffeescript source map)
-      * Uncheck 'Immediate file synchronization'
-      * Arguments should be '--compile --map $FileName$'
-      * Output paths should be '$FileNameWithoutExtension$.js:$FileNameWithoutExtension$.map'
+    * --In Projects Settings, File Watcher, add a coffeescript file watcher (_coffeescript_ *not* coffeescript source map)--
+      * --Uncheck 'Immediate file synchronization'--
+      * --Arguments should be '--compile --map $FileName$'--
+      * --Output paths should be '$FileNameWithoutExtension$.js:$FileNameWithoutExtension$.map'--
     * Edit the default run configuration for node and *uncheck* the 'Run with coffeescript plugin'.
       * On the generated .js file, run in debug and the .coffee file breakpoints will trigger.
       * Note: debugging feels a bit experimental. You can also add breakpoints in the .js file
-  * Formatter, keep comment at first column: checked
-
+  * Formatter
+    * coffeescript, wrapping and braces, 'keep when reformatting', 'line breaks' and 'comment at first column': checked
+    * *javascript*, wrapping and braces, 'if statement', 'force braces': do not force (http://stackoverflow.com/questions/16393147/weird-coffeescript-code-style-in-intellij-idea)
 

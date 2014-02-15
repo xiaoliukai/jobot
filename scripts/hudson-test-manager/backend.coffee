@@ -1,4 +1,5 @@
 {EventEmitter} = require 'events'
+moment = require 'moment'
 
 util = require 'util'
 
@@ -12,18 +13,22 @@ HudsonConnection = require './hudson_connection'
 #     fix_delay[warning]: 24h
 #     fix_delay[escalade]: 24h
 #     builds: key=jobname, value=
-#       lastbuild: String build number
+#       lastbuildnumber: String build number
 #     failedtests: key=testname, value=
 #       builds: String[] where the test was seen failling
-#       since: Date - firstFailDate
+#       since: moment - firstFailDate
 #       detail:
 #         name: The test name
 #         url: The test name
 #       assigned: String - User assigned to test or undefined if none
-#       assignedDate: Date - When the test was assigned
+#       assignedDate: moment - When the test was assigned
 #
 # Emits:
 #  err: On error in the background treads. Pass a String that contains the error message
+#  testresult: projectname, buildname, fixedTests, newFailedTest, currentFailedTest. All tests list are map with key=testname and value is:
+#   test: Object passed in value of tests
+#   since: moment
+#   assigned: String
 #
 
 class HudsonTestManagerBackendSingleton extends EventEmitter
@@ -39,6 +44,10 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
       @robot = robot
       @hudson = hudson
 
+    start: () ->
+      # Setup watchdog
+      setInterval( @.loop, 1 * 60 * 1000 )
+
     # private
     persist: ( callback ) ->
       storage = @robot.brain.get 'HudsonTestManagerBackend'
@@ -46,28 +55,80 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
       storage.projects?={}
       callback( storage )
       @robot.brain.set 'HudsonTestManagerBackend', storage
-      # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
+    # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
 
     # private
-    readstorage: ( ) ->
+    readstorage: () ->
       storage = @robot.brain.get 'HudsonTestManagerBackend'
       storage?={}
       storage.projects?={}
       return storage
 
+    loop: () ->
+      # TODO Check for build status and @backend.persistFailedTests then reportFailedTests()
+      # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+      # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
+
+    checkForNewTestRun: () ->
+      storage = @readstorage()
+      for projectname of storage.projects
+        for buildname, builddetail of storage[projectname].builds
+          @hudson.getBuildStatus buildname, @robot.http, ( err, build ) =>
+            if err
+              console.log err
+            else
+              parseBuildResult projectname, buildname, builddetail, build
+
+    parseBuildResult: ( projectname, buildname, builddetail, buildstatus ) ->
+      # Check if we have a new build and persist if not
+      unless buildstatus.number != builddetail.lastbuildnumber
+        console.log "Last build of #{projectname}/#{buildname} is still #{buildstatus.number}"
+        return
+      persistBuildNumber builddetail.lastbuildnumber
+
+      console.log "Status of #{projectname}/#{buildname} is #{build.result}"
+      switch build.result
+        when 'UNSTABLE'
+          @parseTestRunOfProject projectname, buildname
+        when 'SUCCESS'
+        # TODO Call @persistFailedTests without failed tests
+          console.log "TODO"
+        when 'FAILURE'
+        # TODO Implement
+          console.log "TODO"
+
+    #
+    # Persist the last build number processed
+    #
+    persistBuildNumber: ( projectname, buildname, buildnumber ) ->
+      @persist ( storage ) ->
+        storage.projects[projectname].builds[buildname].lastbuildnumber = buildnumber
+
+    #
+    # Parse test results
+    #
+    parseTestRunOfProject: ( projectname, buildname ) ->
+      console.log "Parsing test report for #{projectname}/#{buildname}"
+      @hudson.getTestReport buildname, @robot.http, ( err, data ) =>
+        if err
+          @emit 'err', hudson.errorToString err
+        else
+          [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, data.failedTests
+          @emit 'testresult', projectname, buildname, fixedTests, newFailedTest, currentFailedTest
+
     #
     # public methods:
     #
-      
+
     broadcastTestToRoom: ( project, room ) ->
       @persist ( storage ) ->
         storage.projects[project]?={}
         storage.projects[project].room = room
 
     getBroadcastRoomForProject: ( project ) ->
-       @readstorage ( storage ) ->
+      @readstorage ( storage ) ->
         callback null, storage.projects[project]?.room
-      
+
     watchBuildForProject: ( build, project ) ->
       @persist ( storage ) ->
         storage.projects[project]?={}
@@ -83,7 +144,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
     #
     # Return a map with project name as key
     #
-    getProjects: ( ) ->
+    getProjects: () ->
       @readstorage().projects
 
     #
@@ -122,7 +183,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
     # Callback: err, fixedTests, newFailedTest, currentFailedTest
     # All lists are map with key=testname and value is:
     #   test: Object passed in value of tests
-    #   since: Date
+    #   since: moment
     #   assigned: String
     #
     persistFailedTests: ( project, build, tests ) ->
@@ -146,10 +207,10 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
             currentFailedTest[test] =
               name: detail.name
               url: detail.url
-              since: new Date()
+              since: moment()
               builds: {}
             newFailedTest[test] = currentFailedTest[test]
-          
+
           # Make sure this build is in the list of build that have seen it fail
           currentFailedTest[test].builds[build] = true
 
@@ -164,14 +225,14 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
         # Store current test fail
         storage.projects[project].failedtests = currentFailedTest
 
-      return [fixedTests, newFailedTest, currentFailedTest ]
+      return [ fixedTests, newFailedTest, currentFailedTest ]
 
     #
     # Return all failed tests for project.
     # callback: err, failedTests, unassignedTests, assignedTests
     # All lists are map with key=testname and value is:
     #   test: Object passed in value of tests
-    #   since: Date
+    #   since: moment
     #   assigned: String
     #
     getFailedTests: ( project ) ->
@@ -181,7 +242,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
       for testname, detail of storage.projects[project].failedtests
         unassigned[testname] = detail if not detail.assigned
         assigned[testname] = detail if detail.assigned
-      return [storage.projects[project].failedtests, unassigned, assigned ]
+      return [ storage.projects[project].failedtests, unassigned, assigned ]
 
     #
     # Assign the specified list of tests to the user
@@ -190,17 +251,18 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
     assignTests: ( project, testnames, user ) ->
       @persist ( storage )->
         for testname in testnames
+          # FIXME Check if testname exists and if not, throw exception
           storage.projects[project]?.failedtests?[testname]?.assigned = user
-          storage.projects[project]?.failedtests?[testname]?.assignedDate = new Date()
+          storage.projects[project]?.failedtests?[testname]?.assignedDate = moment()
 
     #
     # Return all assigned tests for the user.
     # Return: object with projectname as key and value is object with definition:
     #  failedtests: Key is test name, value is object with definition
-    #    since: Date of first test failure
+    #    since: moment of first test failure
     #    assigned: User assigned
-    #    assignedDate: Date of assignment
-    #  assignedDate: Date when was the test assigned 
+    #    assignedDate: moment of assignment
+    #  assignedDate: moment when was the test assigned 
     #
     getAssignedTests: ( user ) ->
       assignedtests = {}
@@ -216,30 +278,6 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
               assigned: detail.assigned
               assignedDate: detail.assignedDate
       return assignedtests
-
-    #checkForNewTestRun: () ->
-    #  @readstorage ( storage ) ->
-    #    for projectname of storage
-    #      for buildname of storage[projectname].builds
-    #        @hudson.getBuildStatus buildname, @robot.http, ( err, build ) =>
-    #          if build.result is 'UNSTABLE' && build.number != storage[projectname].builds[buildname].lastbuild
-    #            @checkForNewBuildOfProject projectname, ( err, newBuild ) ->
-    #              @checkForNewTestRunOfProject projectname
-    #
-    #checkForNewBuildOfProject: ( projectname, callback ) ->
-    #
-    #
-    #checkForNewTestRunOfProject: ( projectname, jobname ) ->
-    #  console.log "Checking tests report for #{jobname} in scope of project #{projectname}"
-    #  @hudson.getTestReport jobname, @robot.http, ( err, data ) =>
-    #    if err
-    #      @emit 'err', hudson.errorToString err
-    #    else
-    #      @persistFailedTests projectname, data.failedTests, ( err, fixedTests, newFailedTest, currentFailedTest ) =>
-    #        if err
-    #          @emit 'err', err
-    #        else
-    #          @emit 'testresult', fixedTests, newFailedTest, currentFailedTest
 
 module.exports = ( robot ) ->
   HudsonTestManagerBackendSingleton.get( robot )

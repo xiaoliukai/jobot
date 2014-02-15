@@ -28,7 +28,8 @@
         "hubot-xmpp": "0.1.9",
         "request": "2.x.x",
         "eyes": "",
-        "node-xmpp": "0.3.2"
+        "node-xmpp": "0.3.2",
+        "moment": "2.5.1"
     },
 
     "engines": {
