@@ -31,6 +31,7 @@
 #   Manuel Darveau 
 #
 util = require( 'util' )
+moment = require 'moment'
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
 
 routes = require( './hudson-test-manager/routes' )
@@ -38,7 +39,7 @@ test_manager_util = require( './hudson-test-manager/util' )
 
 class HudsonTestManager
 
-  constructor: ( @robot ) ->
+  constructor: ( @robot, @backend ) ->
     unless process.env.HUDSON_TEST_MANAGER_URL
       @robot.logger.error 'HUDSON_TEST_MANAGER_URL not set'
       process.exit( 1 )
@@ -48,7 +49,7 @@ class HudsonTestManager
 
     @hudson = new HudsonConnection( process.env.HUDSON_TEST_MANAGER_URL )
 
-    @backend = require( './hudson-test-manager/backend' )( @robot )
+    @backend = require( './hudson-test-manager/backend' )( @robot ) unless @backend
 
     # Setup "routes":
     @setupRoutes( robot )
@@ -65,112 +66,142 @@ class HudsonTestManager
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
-      project = msg.match[1]
-      room = msg.match[2]
-      @backend.broadcastTestToRoom project, room
-      msg.reply( "Will broadcast test failures of #{project} to room #{room}" )
+      @handleBroadcastTest msg
 
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
-      project = msg.match[1]
-      @backend.broadcastTestToRoom project, undefined
-      msg.reply( "Won't broadcast test failures of #{project}" )
+      @handleStopBroadcastingFailedTests msg
 
     # Monitor tests for the specified build which is part of specified project.
     robot.respond routes.WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$, ( msg ) =>
-      project = msg.match[1]
-      build = msg.match[2]
-      @backend.watchBuildForProject build, project
-      msg.reply( "Will watch build #{build} in scope of #{project}" )
+      @handleWatchFailedTests msg
 
     # Stop monitoring tests for the specified build which is part of specified project.
     robot.respond routes.STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
-      project = msg.match[1]
-      build = msg.match[2]
-      @backend.stopWatchingBuildForProject build, project
-      msg.reply( "Won't watch build #{build} in scope of #{project} anymore" )
+      @handleStopWatchingTests msg
 
     # Set the project's manager
     robot.respond routes.SET_MANAGER_FOR_PROJECT_$_TO_$, ( msg ) =>
-      # For security reason, must be sent in groupchat
-      if msg.envelope.user.type == 'groupchat'
-        project = msg.match[1]
-        manager = msg.match[2]
-        @backend.setManagerForProject manager, project
-        msg.reply( "#{manager} in now manager of project #{project}" )
-      else
-        msg.reply( "For security reason, setting manager must be sent in group chat" )
+      @handleSetManager msg
 
     # Configure warning or escalade threshold. Accepted only if from project manager
     robot.respond routes.SET_WARNING_OR_ESCALADE_TEST_FIX_DELAY_FOR_PROJECT_$_TO_$_HOURS_OR_DAY, ( msg ) =>
-      level = msg.match[1]
-      project = msg.match[2]
-      amount = msg.match[3]
-      unit = msg.match[4]
-      try
-        @backend.setThresholdForProject project, level, amount, unit
-        msg.reply( "#{level} set at {#amount} #{unit}" )
-      catch err
-        msg.reply( "Error: #{err}" )
+      @handleSetThreshold msg
 
     # Assign a test/range/list of tests to a user
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
-      testsString = msg.match[1]
-      project = msg.match[2] ? @getLastAnnouncement( msg.envelope.user.room )
-      user = msg.match[3]
-
-      unless project
-        msg.reply( "For which project? Please send something like 'Assign x,y,z of project Toto to me'" )
-        return
-
-      if user == "Me"
-        user = msg.envelope.user.privateChatJID
-      else
-        # TODO Map simple usernames to private JID. Not sure if hubot's brain can help here
-        user = msg.envelope.user.privateChatJID
-
-      unless user
-        msg.reply( "Sorry, I don't know user '#{user}'" )
-        return
-
-      try
-        tests = test_manager_util.parseTestString testsString
-        fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
-        # Resolve test # to test name 
-        for index, testname of tests
-          # FIXME "is number" and "to_int" is not coffeescript...
-          if testname is number
-            tests[index] = @state[fromRoomName].lastannouncement.failedtests[to_int(testname)]
-            unless tests[index]
-              msg.reply( "Sorry, I could not find test '#{testname}'" ) 
-              return
-
-        @backend.assignTests project, tests, user
-        msg.reply( "Ack. Tests assigned to #{user}" )
-        
-      catch err
-        console.log "Could not parse '#{testsString}': #{err}"
-        msg.reply( "Sorry, I don't understand which tests you would like to get assigned (got '#{testsString}'). Tell me something like: 1, 2-5, com.some.Test" )
+      @handleAssignTest msg
 
     # Display failed test and assignee
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
+      @handleShowTestReportForProject msg
+
+  handleBroadcastTest: ( msg ) ->
+    project = msg.match[1]
+    room = msg.match[2]
+    @backend.broadcastTestToRoom project, room
+    msg.reply( "Will broadcast test failures of #{project} to room #{room}" )
+      
+  handleStopBroadcastingFailedTests: ( msg ) ->
+    project = msg.match[1]
+    @backend.broadcastTestToRoom project, undefined
+    msg.reply( "Won't broadcast test failures of #{project}" )
+      
+  handleWatchFailedTests: ( msg ) ->
+    project = msg.match[1]
+    build = msg.match[2]
+    @backend.watchBuildForProject build, project
+    msg.reply( "Will watch build #{build} in scope of #{project}" )
+      
+  handleStopWatchingTests: ( msg ) ->
+    project = msg.match[1]
+    build = msg.match[2]
+    @backend.stopWatchingBuildForProject build, project
+    msg.reply( "Won't watch build #{build} in scope of #{project} anymore" )
+      
+  handleSetManager: ( msg ) ->
+    # For security reason, must be sent in groupchat
+    if msg.envelope.user.type == 'groupchat'
       project = msg.match[1]
-      unless @backend.getProjects[project]
-        msg.reply "Sorry, I do not know #{project}"
+      manager = msg.match[2]
+      @backend.setManagerForProject manager, project
+      msg.reply( "#{manager} in now manager of project #{project}" )
+    else
+      msg.reply( "For security reason, setting manager must be sent in group chat" )
+      
+  handleSetThreshold: ( msg ) ->
+    level = msg.match[1]
+    project = msg.match[2]
+    amount = msg.match[3]
+    unit = msg.match[4]
+    try
+      @backend.setThresholdForProject project, level, amount, unit
+      msg.reply( "#{level} set at {#amount} #{unit}" )
+    catch err
+      msg.reply( "Error: #{err}" )
+      
+  handleAssignTest: ( msg ) ->
+    testsString = msg.match[1]
+    project = msg.match[2] ? @getLastAnnouncement( msg.envelope.user.room )
+    user = msg.match[3]
+
+    unless project
+      msg.reply( "For which project? Please send something like 'Assign x,y,z of project Toto to me'" )
+      return
+
+    if user.toUpperCase() == "ME"
+      user = msg.envelope.user.privateChatJID
+    else
+      # Map simple usernames to private JID. Not sure if hubot's brain can help here
+      brainuser = @robot.brain.userForId user
+      if brainuser
+        user =  brainuser.privateChatJID
+      else 
+        msg.reply( "Sorry, I don't know user '#{user}'" )
         return
 
-      [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests project
-      [report, announcement] = @buildTestReport( project, failedTests, unassignedTests, assignedTests, true )
-      msg.reply( report )
-      if msg.envelope.user.type == 'groupchat'
-        # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
-        fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
-        projectRoomName = @backend.getBroadcastRoomForProject projectname
-        if fromRoomName == projectRoomName
-          @storeAnnouncement projectRoomName, projectname, announcement
-        else 
-          console.log "Will not store announcement since 'show test report' command was received in #{fromRoomName} while the room for the project is #{projectRoomName}"
+    try
+      tests = test_manager_util.parseTestString testsString
+      fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
+      # Resolve test # to test name 
+      for index, testname of tests
+        unless isNaN(testname)
+          tests[index] = @state[fromRoomName].lastannouncement.failedtests[parseInt(testname)]
+          unless tests[index]
+            msg.reply( "Sorry, I could not find test '#{testname}'" ) 
+            return
 
+      @backend.assignTests project, tests, user
+      msg.reply( "Ack. Tests assigned to #{user}" )
+      
+    catch err
+      console.log "Error in assign test '#{testsString}': #{err}"
+      msg.reply( "Sorry, I don't understand which tests you would like to get assigned (got '#{testsString}'). Tell me something like: 1, 2-5, com.some.Test. (err:#{err})" )
+      
+  #
+  # Call back with the test report and store annoucement if sent to a room.
+  # This is not done in the route's handler to ease testing
+  #
+  handleShowTestReportForProject: ( msg ) ->
+    projectname = msg.match[1]
+    unless @backend.getProjects()[projectname]
+      msg.reply "Sorry, I do not know #{projectname}"
+      return
+    
+    [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
+    [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, true )
+    msg.reply( report )
+    
+    # Only store announcement if sent to a room and it's the project room
+    if msg.envelope.user.type == 'groupchat'
+      # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
+      fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
+      projectRoomName = @backend.getBroadcastRoomForProject projectname
+      if fromRoomName == projectRoomName
+        @storeAnnouncement projectRoomName, projectname, announcement
+      else 
+        console.log "Will not store announcement since 'show test report' command was received in #{fromRoomName} while the room for the project is #{projectRoomName}"
+  
   #
   # Build a test report.
   # Return [String: test report, announcement{1: testname, 2: testname, ...}]
@@ -244,7 +275,7 @@ class HudsonTestManager
     roomname = @backend.getBroadcastRoomForProject projectname
     @state[roomname]?={}
     @state[roomname].lastannouncement?={}
-    @state[roomname].lastannouncement.time = new Date()
+    @state[roomname].lastannouncement.time = moment()
     @state[roomname].lastannouncement.projectname = projectname
     @state[roomname].lastannouncement.failedtests = tests
 
@@ -282,5 +313,5 @@ class HudsonTestManager
         type: 'groupchat'
     robot.send( envelope, message )
 
-module.exports = ( robot ) ->
-  new HudsonTestManager( robot )
+module.exports = ( robot, backend ) ->
+  new HudsonTestManager( robot, backend )

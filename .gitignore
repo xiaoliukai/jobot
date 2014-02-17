@@ -1,6 +1,10 @@
 node_modules
 .DS_Store*
 
+# Javascript and transpiller map
+*.js
+*.map
+
 # IntelliJ Idea
 *.iml
 .idea

@@ -251,7 +251,8 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
     assignTests: ( project, testnames, user ) ->
       @persist ( storage )->
         for testname in testnames
-          # FIXME Check if testname exists and if not, throw exception
+          # Check if testname exists and if not, throw exception
+          throw "Unknown test '#{testname}" unless storage.projects[project]?.failedtests?[testname]
           storage.projects[project]?.failedtests?[testname]?.assigned = user
           storage.projects[project]?.failedtests?[testname]?.assignedDate = moment()
 
