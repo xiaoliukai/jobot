@@ -83,24 +83,14 @@ assert status
 assert.equal Object.keys( announcement ).length, 1
 assert.equal announcement[1], 'com.test1'
 
-  #
-  #buildTestReport: ( project, failedTests, unassignedTests, assignedTests, includeAssignedTests ) ->
-  #  status = "Test report for #{project}\n"
-  #  testno = 0
-  #  announcement = {}
-  #  for testname, detail of unassignedTests
-  #    status += "    #{++testno} - #{detail.name} is unassigned since #{detail.since} (#{detail.url})\n"
-  #    announcement[testno] = testname
-  #  if includeAssignedTests
-  #    for testname, detail of assignedTests
-  #      status += "    #{++testno} - assigned to (#{detail.assigned} since #{detail.assignedDate}): #{detail.name} (#{detail.url})\n"
-  #      announcement[testno] = testname
-  #  return [ status, announcement ]
-
 #
 # processNewTestResult
 #
 # TODO Implement
 
+#
+# handleAssignTest
+#
+# TODO Implement
 
 console.log "Success"
