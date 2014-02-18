@@ -101,24 +101,24 @@ class HudsonTestManager
     room = msg.match[2]
     @backend.broadcastTestToRoom project, room
     msg.reply( "Will broadcast test failures of #{project} to room #{room}" )
-      
+
   handleStopBroadcastingFailedTests: ( msg ) ->
     project = msg.match[1]
     @backend.broadcastTestToRoom project, undefined
     msg.reply( "Won't broadcast test failures of #{project}" )
-      
+
   handleWatchFailedTests: ( msg ) ->
     project = msg.match[1]
     build = msg.match[2]
     @backend.watchBuildForProject build, project
     msg.reply( "Will watch build #{build} in scope of #{project}" )
-      
+
   handleStopWatchingTests: ( msg ) ->
     project = msg.match[1]
     build = msg.match[2]
     @backend.stopWatchingBuildForProject build, project
     msg.reply( "Won't watch build #{build} in scope of #{project} anymore" )
-      
+
   handleSetManager: ( msg ) ->
     # For security reason, must be sent in groupchat
     if msg.envelope.user.type == 'groupchat'
@@ -128,7 +128,7 @@ class HudsonTestManager
       msg.reply( "#{manager} in now manager of project #{project}" )
     else
       msg.reply( "For security reason, setting manager must be sent in group chat" )
-      
+
   handleSetThreshold: ( msg ) ->
     level = msg.match[1]
     project = msg.match[2]
@@ -139,10 +139,10 @@ class HudsonTestManager
       msg.reply( "#{level} set at {#amount} #{unit}" )
     catch err
       msg.reply( "Error: #{err}" )
-      
+
   handleAssignTest: ( msg ) ->
     testsString = msg.match[1]
-    project = msg.match[2] ? @getLastAnnouncement( msg.envelope.user.room )
+    project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}@#{msg.envelope.user.name}" )?.projectname
     user = msg.match[3]
 
     unless project
@@ -155,29 +155,36 @@ class HudsonTestManager
       # Map simple usernames to private JID. Not sure if hubot's brain can help here
       brainuser = @robot.brain.userForId user
       if brainuser
-        user =  brainuser.privateChatJID
-      else 
+        user = brainuser.privateChatJID
+      else
         msg.reply( "Sorry, I don't know user '#{user}'" )
         return
 
     try
       tests = test_manager_util.parseTestString testsString
       fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
-      # Resolve test # to test name 
+      # Resolve test # to test name
+      lastannouncement = @getLastAnnouncement( fromRoomName )
       for index, testname of tests
-        unless isNaN(testname)
-          tests[index] = @state[fromRoomName].lastannouncement.failedtests[parseInt(testname)]
-          unless tests[index]
-            msg.reply( "Sorry, I could not find test '#{testname}'" ) 
+        unless isNaN( testname )
+          # If a number, resolve it using last announcement
+          if lastannouncement
+            tests[index] = lastannouncement.failedtests[ parseInt( testname ) ]
+          else
+            msg.reply( "Sorry, I could not resolve the test #'#{testname}'. Please specify the full test name." )
+            # TODO Resend annnouncement?
             return
+        unless tests[index]
+          msg.reply( "Sorry, I could not find test '#{testname}'" )
+          return
 
       @backend.assignTests project, tests, user
-      msg.reply( "Ack. Tests assigned to #{user}" )
-      
+      msg.reply( "Ack. Tests assigned to #{user.split( '@' )[0]}" )
+
     catch err
       console.log "Error in assign test '#{testsString}': #{err}"
       msg.reply( "Sorry, I don't understand which tests you would like to get assigned (got '#{testsString}'). Tell me something like: 1, 2-5, com.some.Test. (err:#{err})" )
-      
+
   #
   # Call back with the test report and store annoucement if sent to a room.
   # This is not done in the route's handler to ease testing
@@ -187,11 +194,11 @@ class HudsonTestManager
     unless @backend.getProjects()[projectname]
       msg.reply "Sorry, I do not know #{projectname}"
       return
-    
+
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
     [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, true )
     msg.reply( report )
-    
+
     # Only store announcement if sent to a room and it's the project room
     if msg.envelope.user.type == 'groupchat'
       # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
@@ -199,9 +206,9 @@ class HudsonTestManager
       projectRoomName = @backend.getBroadcastRoomForProject projectname
       if fromRoomName == projectRoomName
         @storeAnnouncement projectRoomName, projectname, announcement
-      else 
+      else
         console.log "Will not store announcement since 'show test report' command was received in #{fromRoomName} while the room for the project is #{projectRoomName}"
-  
+
   #
   # Build a test report.
   # Return [String: test report, announcement{1: testname, 2: testname, ...}]
@@ -230,29 +237,32 @@ class HudsonTestManager
     # Get the broadcast room name for this project
     roomname = @backend.getBroadcastRoomForProject projectname
     return unless roomname
-    
-    status = "Test report for #{project}\n"
+
+    status = "Test report for #{projectname}\n"
     if Object.keys( fixedTests ).length != 0
-      status += "  Fixed tests:"
+      status += "  Fixed:\n"
       for testname, detail of fixedTests
         status += "    #{detail.name}:"
         if detail.assigned
           status += " Was assigned to #{detail.assigned}."
         else
           status += " Was not assigned."
-        status += " Failure to resolution: #{moment().diff( detail.since, 'days', true )}."
+        status += " Failure to resolution: #{moment().diff( detail.since, 'days', true )}.\n"
 
     if Object.keys( newFailedTest ).length != 0
       testno = 0
       announcement = {}
-      status += "  New failures:"
-      for testname, detail of fixedTests
-        status += "    #{++testno} - #{detail.name} (#{detail.url})"
+      status += "  New:\n"
+      for testname, detail of newFailedTest
+        status += "    #{++testno} - #{detail.name} (#{detail.url})\n"
         announcement[testno] = testname
       @storeAnnouncement roomname, projectname, announcement
 
+    # Trim the last \n
+    status = status.trim()
+
     # Send report to the room
-    sendGroupChatMesssage roomname, report
+    @sendGroupChatMesssage roomname, status
 
   # Return the last announcement for a given room name
   # return object:
@@ -284,7 +294,7 @@ class HudsonTestManager
   notifyUnassignedTest: ( projectname, to_jid ) ->
     roomname = @backend.getBroadcastRoomForProject projectname
     return unless roomname
-    
+
     [report, announcement] = @buildTestReport( project, failedTests, unassignedTests, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
     sendGroupChatMesssage roomname, report

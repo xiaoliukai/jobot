@@ -19,7 +19,7 @@ setup = () ->
   return [robot, backend, manager]
 
 #
-# Test handleShowTestReportForProject
+# handleShowTestReportForProject
 #
 [robot, backend, manager] = setup()
 msg = 
@@ -86,11 +86,75 @@ assert.equal announcement[1], 'com.test1'
 #
 # processNewTestResult
 #
-# TODO Implement
+[robot, backend, manager] = setup()
 
+backend.getBroadcastRoomForProject = () ->
+  return "roomA"
+  
+fixedTests = {}
+fixedTests['com.fixed'] =
+  name: 'com.fixed'
+  since: moment()
+  url: 'http://hudson.acme.com/com.test1'
+  assigned: 'johndoe'
+  assignedDate: moment()
+newFailedTest = {}
+newFailedTest['com.new.fail'] =
+  name: 'com.new.fail'
+  since: moment()
+  url: 'http://hudson.acme.com/com.new.fail'
+  
+manager.storeAnnouncement = ( roomname, projectname, announcement ) ->
+  assert.equal "roomA", roomname
+  assert.equal "projectA", projectname
+  assert.equal Object.keys( announcement ).length, 1
+  assert.equal announcement[1], 'com.new.fail'
+  
+manager.sendGroupChatMesssage = ( roomname, status ) ->
+  assert.equal "roomA", roomname
+  assert.equal status.split('\n').length, 5
+  
+manager.processNewTestResult "projectA", "buildA", fixedTests, newFailedTest
+  
 #
 # handleAssignTest
 #
-# TODO Implement
+[robot, backend, manager] = setup()
+msg = 
+  match: [undefined, '1,2,3-5,com.test6', undefined, 'me']
+  envelope:
+    user:
+      type: 'groupchat'
+      room: 'roomA'
+      name: 'conferences.jabber.com'
+      privateChatJID: 'johndoe@jabber.com'
+  reply: ( msg ) ->
+    assert.equal msg, 'Ack. Tests assigned to johndoe'
 
+backend.assignTests = ( project, tests, user ) ->
+  assert.equal project, 'projectA'
+  assert.equal user, 'johndoe@jabber.com'
+  assert.equal tests.length, 6
+  assert.equal tests[0], 'com.test1'
+  assert.equal tests[1], 'com.test2'
+  assert.equal tests[2], 'com.test3'
+  assert.equal tests[3], 'com.test4'
+  assert.equal tests[4], 'com.test5'
+  assert.equal tests[5], 'com.test6'
+    
+manager.getLastAnnouncement = ( roomname ) ->
+  assert.equal roomname, 'roomA@conferences.jabber.com'
+  tests = {}
+  tests[1] = 'com.test1'
+  tests[2] = 'com.test2'
+  tests[3] = 'com.test3'
+  tests[4] = 'com.test4'
+  tests[5] = 'com.test5'
+  tests[6] = 'com.test6'
+  return {} = 
+    projectname: 'projectA'
+    failedtests: tests
+    
+manager.handleAssignTest msg  
+    
 console.log "Success"
