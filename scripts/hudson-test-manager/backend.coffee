@@ -29,6 +29,7 @@ HudsonConnection = require './hudson_connection'
 #   test: Object passed in value of tests
 #   since: moment
 #   assigned: String
+#  buildfailed: project, buildname, url
 #
 
 class HudsonTestManagerBackendSingleton extends EventEmitter
@@ -77,7 +78,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
             if err
               console.log err
             else
-              parseBuildResult projectname, buildname, builddetail, build
+              @parseBuildResult projectname, buildname, builddetail, build
 
     parseBuildResult: ( projectname, buildname, builddetail, buildstatus ) ->
       # Check if we have a new build and persist if not
@@ -91,11 +92,10 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
         when 'UNSTABLE'
           @parseTestRunOfProject projectname, buildname
         when 'SUCCESS'
-        # TODO Call @persistFailedTests without failed tests
-          console.log "TODO"
+        # Call @persistFailedTests without failed tests
+          @persistFailedTests projectname, buildname, {}
         when 'FAILURE'
-        # TODO Implement
-          console.log "TODO"
+          @emit 'buildfailed', projectname, buildname, build.url
 
     #
     # Persist the last build number processed
@@ -186,7 +186,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
     #   since: moment
     #   assigned: String
     #
-    persistFailedTests: ( project, build, tests ) ->
+    persistFailedTests: ( project, build, failedtests ) ->
       currentFailedTest = {}
       newFailedTest = {}
       fixedTests = {}
@@ -195,7 +195,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
         previousFailedTest = storage.projects[project].failedtests
 
         # Copy current assignment if any
-        for test, detail of tests
+        for test, detail of failedtests
           if previousFailedTest?[test]
             #console.log "#{test} failed previously"
             # Was already failling
