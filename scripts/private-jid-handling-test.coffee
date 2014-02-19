@@ -1,6 +1,4 @@
-util = require 'util'
-Xmpp = require 'node-xmpp'
-
+##
 # Description: 
 #   Demonstrate groupchat to private JID translation capacity of hubot-xmpp
 #
@@ -8,6 +6,10 @@ Xmpp = require 'node-xmpp'
 #   hubot talk to me in private
 #   hubot talk to me
 #
+
+util = require 'util'
+Xmpp = require 'node-xmpp'
+
 module.exports = ( robot ) ->
   
   robot.respond /talk to me$/i, ( msg ) ->

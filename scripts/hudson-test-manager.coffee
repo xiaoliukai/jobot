@@ -11,17 +11,18 @@
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 
 #  
-# Commands:  
-#   Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room. 
-#   Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room. 
-#   Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project. 
-#   Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project. 
+# Commands:
+#   hubot Check builds - Trigger a check on latest builds
+#   hubot Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room. 
+#   hubot Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room. 
+#   hubot Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project. 
+#   hubot Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project. 
 # 
-#   Set manager for project {} to {} - For security reason, must be sent in groupchat 
-#   Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
+#   hubot Set manager for project {} to {} - For security reason, must be sent in groupchat 
+#   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
 # 
-#   Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user 
-#   Show test report for project {} 
+#   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user 
+#   hubot Show test report for project {} 
 # 
 # Notes:  
 #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project  
@@ -65,6 +66,10 @@ class HudsonTestManager
   # Setup "jabber" routes
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
+    robot.respond /check builds/i, ( msg ) =>
+      @backend.checkForNewTestRun()
+    
+    # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
 
@@ -93,6 +98,7 @@ class HudsonTestManager
       @handleAssignTest msg
 
     # Display failed test and assignee
+    # TODO the "for project" part or the route should be optional
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
       @handleShowTestReportForProject msg
 
@@ -197,17 +203,16 @@ class HudsonTestManager
 
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
     [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, true )
-    msg.reply( report )
+    msg.reply report
 
     # Only store announcement if sent to a room and it's the project room
     if msg.envelope.user.type == 'groupchat'
       # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
-      fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
       projectRoomName = @backend.getBroadcastRoomForProject projectname
-      if fromRoomName == projectRoomName
+      if msg.envelope.user.room == projectRoomName
         @storeAnnouncement projectRoomName, projectname, announcement
       else
-        console.log "Will not store announcement since 'show test report' command was received in #{fromRoomName} while the room for the project is #{projectRoomName}"
+        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
   #
   # Build a test report.

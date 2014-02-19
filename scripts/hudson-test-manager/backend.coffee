@@ -32,14 +32,14 @@ HudsonConnection = require './hudson_connection'
 #  buildfailed: project, buildname, url
 #
 
-class HudsonTestManagerBackendSingleton extends EventEmitter
+class HudsonTestManagerBackendSingleton
 
   instance = null
 
   @get: ( robot ) ->
     instance ?= new HudsonTestManagerBackend( robot )
 
-  class HudsonTestManagerBackend
+  class HudsonTestManagerBackend extends EventEmitter
 
     constructor: ( robot, hudson ) ->
       @robot = robot
@@ -56,6 +56,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
       storage.projects?={}
       callback( storage )
       @robot.brain.set 'HudsonTestManagerBackend', storage
+      @robot.brain.save()
     # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
 
     # private
@@ -65,15 +66,20 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
       storage.projects?={}
       return storage
 
-    loop: () ->
-      # TODO Check for build status and @backend.persistFailedTests then reportFailedTests()
+    loop: () =>
+      console.log "Checking builds..."
+      # Check for new builds
+      @checkForNewTestRun()
+      
       # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
       # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
     checkForNewTestRun: () ->
       storage = @readstorage()
       for projectname of storage.projects
-        for buildname, builddetail of storage[projectname].builds
+        console.log "  for project #{projectname}"
+        for buildname, builddetail of storage[projectname]?.builds
+          console.log "    for buildname #{buildname}"
           @hudson.getBuildStatus buildname, @robot.http, ( err, build ) =>
             if err
               console.log err
@@ -126,8 +132,7 @@ class HudsonTestManagerBackendSingleton extends EventEmitter
         storage.projects[project].room = room
 
     getBroadcastRoomForProject: ( project ) ->
-      @readstorage ( storage ) ->
-        callback null, storage.projects[project]?.room
+      @readstorage().projects[project]?.room
 
     watchBuildForProject: ( build, project ) ->
       @persist ( storage ) ->
