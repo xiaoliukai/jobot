@@ -36,8 +36,8 @@ class HudsonTestManagerBackendSingleton
 
   instance = null
 
-  @get: ( robot ) ->
-    instance ?= new HudsonTestManagerBackend( robot )
+  @get: ( robot, hudson ) ->
+    instance ?= new HudsonTestManagerBackend( robot, hudson )
 
   class HudsonTestManagerBackend extends EventEmitter
 
@@ -47,7 +47,7 @@ class HudsonTestManagerBackendSingleton
 
     start: () ->
       # Setup watchdog
-      setInterval( @.loop, 1 * 60 * 1000 )
+      setInterval( @.loop, 1 * 10 * 1000 )
 
     # private
     persist: ( callback ) ->
@@ -67,47 +67,50 @@ class HudsonTestManagerBackendSingleton
       return storage
 
     loop: () =>
-      console.log "Checking builds..."
       # Check for new builds
       @checkForNewTestRun()
-      
-      # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
-      # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
+
+    # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+    # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
     checkForNewTestRun: () ->
+      console.log "Checking builds..."
       storage = @readstorage()
       for projectname of storage.projects
         console.log "  for project #{projectname}"
-        for buildname, builddetail of storage[projectname]?.builds
+        for buildname, lastbuilddetail of storage.projects[projectname]?.builds
           console.log "    for buildname #{buildname}"
-          @hudson.getBuildStatus buildname, @robot.http, ( err, build ) =>
+          @hudson.getBuildStatus buildname, @robot.http, ( err, buildresult ) =>
             if err
               console.log err
             else
-              @parseBuildResult projectname, buildname, builddetail, build
+              @parseBuildResult projectname, buildname, lastbuilddetail, buildresult
 
-    parseBuildResult: ( projectname, buildname, builddetail, buildstatus ) ->
+    parseBuildResult: ( projectname, buildname, lastbuilddetail, buildresult ) ->
       # Check if we have a new build and persist if not
-      unless buildstatus.number != builddetail.lastbuildnumber
-        console.log "Last build of #{projectname}/#{buildname} is still #{buildstatus.number}"
+      unless buildresult.number != lastbuilddetail.lastbuildnumber
+        console.log "Last build of #{projectname}/#{buildname} is still #{buildresult.number}"
         return
-      persistBuildNumber builddetail.lastbuildnumber
 
-      console.log "Status of #{projectname}/#{buildname} is #{build.result}"
-      switch build.result
+      console.log "Status of #{projectname}/#{buildname} is #{buildresult.result}"
+      switch buildresult.result
         when 'UNSTABLE'
           @parseTestRunOfProject projectname, buildname
         when 'SUCCESS'
         # Call @persistFailedTests without failed tests
-          @persistFailedTests projectname, buildname, {}
+          [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, {}
+          @emit 'testresult', projectname, buildname, fixedTests, newFailedTest, currentFailedTest
         when 'FAILURE'
-          @emit 'buildfailed', projectname, buildname, build.url
+          @emit 'buildfailed', projectname, buildname, buildresult.url
+
+      @persistBuildNumber projectname, buildname, buildresult.number
 
     #
     # Persist the last build number processed
     #
     persistBuildNumber: ( projectname, buildname, buildnumber ) ->
       @persist ( storage ) ->
+        console.log "Persisting last build of #{projectname}/#{buildname} to #{buildnumber}"
         storage.projects[projectname].builds[buildname].lastbuildnumber = buildnumber
 
     #
@@ -117,7 +120,7 @@ class HudsonTestManagerBackendSingleton
       console.log "Parsing test report for #{projectname}/#{buildname}"
       @hudson.getTestReport buildname, @robot.http, ( err, data ) =>
         if err
-          @emit 'err', hudson.errorToString err
+          @emit 'err', @hudson.errorToString err
         else
           [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, data.failedTests
           @emit 'testresult', projectname, buildname, fixedTests, newFailedTest, currentFailedTest
@@ -285,5 +288,5 @@ class HudsonTestManagerBackendSingleton
               assignedDate: detail.assignedDate
       return assignedtests
 
-module.exports = ( robot ) ->
-  HudsonTestManagerBackendSingleton.get( robot )
+module.exports = ( robot, hudson ) ->
+  HudsonTestManagerBackendSingleton.get( robot, hudson )

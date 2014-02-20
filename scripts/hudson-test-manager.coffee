@@ -50,7 +50,7 @@ class HudsonTestManager
 
     @hudson = new HudsonConnection( process.env.HUDSON_TEST_MANAGER_URL )
 
-    @backend = require( './hudson-test-manager/backend' )( @robot ) unless @backend
+    @backend = require( './hudson-test-manager/backend' )( @robot, @hudson ) unless @backend
 
     # Setup "routes":
     @setupRoutes( robot )
@@ -106,24 +106,24 @@ class HudsonTestManager
     project = msg.match[1]
     room = msg.match[2]
     @backend.broadcastTestToRoom project, room
-    msg.reply( "Will broadcast test failures of #{project} to room #{room}" )
+    msg.send( "Will broadcast test failures of #{project} to room #{room}" )
 
   handleStopBroadcastingFailedTests: ( msg ) ->
     project = msg.match[1]
     @backend.broadcastTestToRoom project, undefined
-    msg.reply( "Won't broadcast test failures of #{project}" )
+    msg.send( "Won't broadcast test failures of #{project}" )
 
   handleWatchFailedTests: ( msg ) ->
     project = msg.match[1]
     build = msg.match[2]
     @backend.watchBuildForProject build, project
-    msg.reply( "Will watch build #{build} in scope of #{project}" )
+    msg.send( "Will watch build #{build} in scope of #{project}" )
 
   handleStopWatchingTests: ( msg ) ->
     project = msg.match[1]
     build = msg.match[2]
     @backend.stopWatchingBuildForProject build, project
-    msg.reply( "Won't watch build #{build} in scope of #{project} anymore" )
+    msg.send( "Won't watch build #{build} in scope of #{project} anymore" )
 
   handleSetManager: ( msg ) ->
     # For security reason, must be sent in groupchat
@@ -131,7 +131,7 @@ class HudsonTestManager
       project = msg.match[1]
       manager = msg.match[2]
       @backend.setManagerForProject manager, project
-      msg.reply( "#{manager} in now manager of project #{project}" )
+      msg.send( "#{manager} in now manager of project #{project}" )
     else
       msg.reply( "For security reason, setting manager must be sent in group chat" )
 
@@ -142,13 +142,13 @@ class HudsonTestManager
     unit = msg.match[4]
     try
       @backend.setThresholdForProject project, level, amount, unit
-      msg.reply( "#{level} set at {#amount} #{unit}" )
+      msg.send( "#{level} set at {#amount} #{unit}" )
     catch err
       msg.reply( "Error: #{err}" )
 
   handleAssignTest: ( msg ) ->
     testsString = msg.match[1]
-    project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}@#{msg.envelope.user.name}" )?.projectname
+    project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}" )?.projectname
     user = msg.match[3]
 
     unless project
@@ -168,7 +168,7 @@ class HudsonTestManager
 
     try
       tests = test_manager_util.parseTestString testsString
-      fromRoomName = "#{msg.envelope.user.room}@#{msg.envelope.user.name}"
+      fromRoomName = "#{msg.envelope.user.room}"
       # Resolve test # to test name
       lastannouncement = @getLastAnnouncement( fromRoomName )
       for index, testname of tests
@@ -203,7 +203,7 @@ class HudsonTestManager
 
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
     [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, true )
-    msg.reply report
+    msg.send report
 
     # Only store announcement if sent to a room and it's the project room
     if msg.envelope.user.type == 'groupchat'
@@ -219,15 +219,19 @@ class HudsonTestManager
   # Return [String: test report, announcement{1: testname, 2: testname, ...}]
   #
   buildTestReport: ( project, failedTests, unassignedTests, assignedTests, includeAssignedTests ) ->
+    if Object.keys( failedTests ).length == 0
+      return [ "No test fail", {} ]
+    
     status = "Test report for #{project}\n"
     testno = 0
     announcement = {}
     for testname, detail of unassignedTests
-      status += "    #{++testno} - #{detail.name} is unassigned since #{detail.since} (#{detail.url})\n"
+      status += "    #{++testno} - #{detail.name} is unassigned since #{moment(detail.since).fromNow()} (#{detail.url})\n"
       announcement[testno] = testname
     if includeAssignedTests
       for testname, detail of assignedTests
-        status += "    #{++testno} - assigned to (#{detail.assigned} since #{detail.assignedDate}): #{detail.name} (#{detail.url})\n"
+        # TODO detail.assigned is the full JID. It would be nice to keep the full JID but report on the simple name
+        status += "    #{++testno} - assigned to (#{detail.assigned} since #{moment(detail.assignedDate).fromNow()}): #{detail.name} (#{detail.url})\n"
         announcement[testno] = testname
     return [ status, announcement ]
 
@@ -235,7 +239,7 @@ class HudsonTestManager
   # Process new test result
   # Called when a new test result is available
   #
-  processNewTestResult: ( projectname, buildname, fixedTests, newFailedTest, currentFailedTest ) ->
+  processNewTestResult: ( projectname, buildname, fixedTests, newFailedTest, currentFailedTest ) =>
     # If nothing new, shut up
     return unless Object.keys( fixedTests ).length != 0 or Object.keys( newFailedTest ).length != 0
 
@@ -245,19 +249,19 @@ class HudsonTestManager
 
     status = "Test report for #{projectname}\n"
     if Object.keys( fixedTests ).length != 0
-      status += "  Fixed:\n"
+      status += "  Fixed test(s):\n"
       for testname, detail of fixedTests
         status += "    #{detail.name}:"
         if detail.assigned
           status += " Was assigned to #{detail.assigned}."
         else
           status += " Was not assigned."
-        status += " Failure to resolution: #{moment().diff( detail.since, 'days', true )}.\n"
+        status += " Resolution time: #{moment(detail.since).from( moment(), true )}.\n"
 
     if Object.keys( newFailedTest ).length != 0
       testno = 0
       announcement = {}
-      status += "  New:\n"
+      status += "  New failure(s):\n"
       for testname, detail of newFailedTest
         status += "    #{++testno} - #{detail.name} (#{detail.url})\n"
         announcement[testno] = testname
@@ -318,7 +322,7 @@ class HudsonTestManager
       room: to_jid
       user:
         type: 'chat'
-    robot.send( envelope, message )
+    @robot.send( envelope, message )
 
   sendGroupChatMesssage: ( to_jid, message ) ->
     # TODO Validate if this works
@@ -326,7 +330,7 @@ class HudsonTestManager
       room: to_jid
       user:
         type: 'groupchat'
-    robot.send( envelope, message )
+    @robot.send( envelope, message )
 
 module.exports = ( robot, backend ) ->
   new HudsonTestManager( robot, backend )

@@ -27,6 +27,7 @@ class HudsonConnection
       else
         try
         # Parse the json result
+        #  console.log body
           jsonBody = JSON.parse( body )
 
           # Convert the response if needed
@@ -91,13 +92,13 @@ class HudsonConnection
       result.failedTests = {}
       for suite in res.suites
         for testcase in suite.cases
-          if testcase.status == 'FAILED'
+          if testcase.status == 'FAILED' or testcase.status == 'REGRESSION'
             # The package name is in a separate path element than test Class name
             lastDot = testcase.className.lastIndexOf( '.' )
             urlPath = testcase.className.substring( 0, lastDot ) + '/' + testcase.className.substring( lastDot + 1 )
             result.failedTests[testcase.className] =
               name: testcase.className
-              url: "#{hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/#{urlPath}/#{testcase.name}"
+              url: "#{hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/#{urlPath}"
 
       return result
     @getJson req, jsonCallback, builder

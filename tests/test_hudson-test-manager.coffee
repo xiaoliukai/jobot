@@ -27,8 +27,8 @@ msg =
   envelope:
     user:
       type: 'groupchat'
-      room: 'myconf'
-      name: 'conferences.jabber.com'
+      room: 'myconf@conferences.jabber.com'
+      name: 'john'
   reply: ( msg ) ->
     assert.equal msg, 'Test report for'
 backend.getProjects = () ->
@@ -125,8 +125,8 @@ msg =
   envelope:
     user:
       type: 'groupchat'
-      room: 'roomA'
-      name: 'conferences.jabber.com'
+      room: 'roomA@conferences.jabber.com'
+      name: 'john'
       privateChatJID: 'johndoe@jabber.com'
   reply: ( msg ) ->
     assert.equal msg, 'Ack. Tests assigned to johndoe'

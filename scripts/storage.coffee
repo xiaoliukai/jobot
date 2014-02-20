@@ -10,9 +10,16 @@ Util = require "util"
 
 module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
-    output = Util.inspect(robot.brain.data, false, 4)
+    output = JSON.stringify robot.brain.data, 2
     msg.send output
 
+  robot.respond /set storage ([\s\S]*)$/i, (msg) ->
+    backup = robot.brain.data
+    console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, 2}"
+    robot.brain.data = JSON.parse( msg.match[1] )
+    robot.brain.save()
+    msg.send "Done, previous brain was #{JSON.stringify backup, 2}"
+    
   robot.respond /show users$/i, (msg) ->
     response = ""
 
