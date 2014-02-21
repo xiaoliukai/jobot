@@ -1,27 +1,26 @@
 Dependencies:
   * Require patched hubot to forward http options and HUBOT_ADAPTER_PATH workaround. See https://github.com/MacKeeper/hubot
+  * Require patched hubot-xmpp since latest release does not work at all. See https://github.com/markstory/hubot-xmpp/issues/59 and https://github.com/markstory/hubot-xmpp/pull/60
   * Require patched scoped-http-client to accept 'rejectUnauthorized: false'. See https://github.com/MacKeeper/node-scoped-http-client
-  * Require redis. Install from http://redis.io/ and run redis-server
-  * Require
 
-To use forks of 'hubot' and 'scoped-http-client':
-  * In 'hubot' and 'node-scoped-http-client' repo, run 'npm link'
-  * In 'jobot' repo, run 'npm link hubot' and 'npm link scoped-http-client'
-  * Because of the way nope find dependencies, hubot won't be able to find the hubot-xmpp adapter. node lookup directories for dependencies but fails big time with symlink (which npm link creates)
-    * Environment variable HUBOT_ADAPTER_PATH is set in the launchers to workaround this
+To use forks of ```hubot```, ```hubot-xmpp``` and ```scoped-http-client```:
+  * It is highly recommended to git clone dependencies directly in node_modules
 
 Configure IntelliJ:
-  * --Install coffeescript plugin-- Run 'coffee -cmw .' in the root directory
-  * Install File watcher plugin
-  * To run a .coffee file, edit the default run configuration for node and check the 'Run with coffeescript plugin'.
-    * You will have to set a path to the coffee executable. If not installed, install with 'npm install -g coffee-script' and the executable should be '/usr/local/bin/coffee'
-  * To debug a .coffee file
-    * --In Projects Settings, File Watcher, add a coffeescript file watcher (_coffeescript_ *not* coffeescript source map)--
-      * --Uncheck 'Immediate file synchronization'--
-      * --Arguments should be '--compile --map $FileName$'--
-      * --Output paths should be '$FileNameWithoutExtension$.js:$FileNameWithoutExtension$.map'--
-    * Edit the default run configuration for node and *uncheck* the 'Run with coffeescript plugin'.
-      * On the generated .js file, run in debug and the .coffee file breakpoints will trigger.
+  * Install coffeescript plugin
+  * Run ```coffee -cmw .``` in the root directory
+  * To run a ```.coffee``` file, edit the default run configuration for node and check the 'Run with coffeescript plugin'.
+    * You will have to set a path to the coffee executable. If not installed, install with ```npm install -g coffee-script``` and the executable should be ```/usr/local/bin/coffee```
+  * To debug a ```.coffee``` file
+    * Edit the default run configuration for node and *uncheck* the *Run with coffeescript plugin*.
+      * On the generated ```.js``` file, run in debug and the ```.coffee``` file breakpoints will trigger.
+      * You will have to run:
+        * ```coffee -cm node_modules/hubot```
+        * ```coffee -cm node_modules/hubot-xmpp```
+        * ```coffee -cm node_modules/hubot-scripts/src/scripts/file-brain.coffee```
+        * ```rm node_modules/hubot-scripts/src/scripts/file-brain.coffee``` the file won't load in debug (see https://github.com/github/hubot/issues/653)
+      *Also, make sure there is no ```hubot``` directory in ```node_modules/hubot-xmpp/node_modules``` else messages wont get to the handlers. This is due to two classes with same name loaded but since 
+      hubot does an ```instanceof``` on one class but ```hubot-xmpp``` create the other one.  
       * Note: debugging feels a bit experimental. You can also add breakpoints in the .js file
   * Formatter
     * coffeescript, wrapping and braces, 'keep when reformatting', 'line breaks' and 'comment at first column': checked
