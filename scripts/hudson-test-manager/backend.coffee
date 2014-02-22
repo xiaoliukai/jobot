@@ -47,7 +47,7 @@ class HudsonTestManagerBackendSingleton
 
     start: () ->
       # Setup watchdog
-      setInterval( @.loop, 1 * 10 * 1000 )
+      setInterval( @.loop, 1 * 60 * 1000 )
 
     # private
     persist: ( callback ) ->
