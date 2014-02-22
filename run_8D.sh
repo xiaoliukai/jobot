@@ -4,7 +4,7 @@ export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
 #export HUBOT_LOG_LEVEL=debug
 
-export FILE_BRAIN_PATH="."
+export FILE_BRAIN_PATH=/data/cloud/jobot
 export HUDSON_TEST_MANAGER_URL='https://solic1.dev.8d.com:8443'
 
 # Set path to adapter since we are using npm link for hubot dependency. See Readme
