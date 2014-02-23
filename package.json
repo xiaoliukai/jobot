@@ -29,8 +29,13 @@
         "hubot-xmpp": "0.1.9",
         "request": "2.x.x",
         "eyes": "",
-        "node-xmpp": "0.3.2",
-        "moment": "2.5.1"
+        "natural-compare-lite": "0.4.6",
+        "async": "0.2.10",
+        
+        "moment": "2.5.1",
+        
+        "xpath": "0.0.6",
+        "xmldom": "0.1.19"
     },
 
     "engines": {

@@ -186,6 +186,12 @@ class HudsonTestManagerBackendSingleton
       @readstorage().projects[project]?.fix_delay?[level]
 
     #
+    # Sorter on test name
+    #
+    naturalSortOnTestName: ( a, b ) ->
+      String.naturalCompare( a.name, b.name )
+      
+    #
     # Store currently failling tests for a project.
     # tests: Map with key=testname, value={name:, url:}
     # Callback: err, fixedTests, newFailedTest, currentFailedTest
@@ -232,7 +238,10 @@ class HudsonTestManagerBackendSingleton
 
         # Store current test fail
         storage.projects[project].failedtests = currentFailedTest
-
+        
+      fixedTests.sort @naturalSortOnTestName
+      newFailedTest.sort @naturalSortOnTestName
+      currentFailedTest.sort @naturalSortOnTestName
       return [ fixedTests, newFailedTest, currentFailedTest ]
 
     #
@@ -245,12 +254,18 @@ class HudsonTestManagerBackendSingleton
     #
     getFailedTests: ( project ) ->
       storage = @readstorage()
+      failedtests = storage.projects[project].failedtests
       assigned = {}
       unassigned = {}
       for testname, detail of storage.projects[project].failedtests
         unassigned[testname] = detail if not detail.assigned
         assigned[testname] = detail if detail.assigned
-      return [ storage.projects[project].failedtests, unassigned, assigned ]
+        
+      # Sort on test name
+      failedtests.sort @naturalSortOnTestName
+      unassigned.sort @naturalSortOnTestName
+      assigned.sort @naturalSortOnTestName
+      return [ failedtests, unassigned, assigned ]
 
     #
     # Assign the specified list of tests to the user

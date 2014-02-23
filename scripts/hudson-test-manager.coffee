@@ -31,8 +31,11 @@
 # Author:  
 #   Manuel Darveau 
 #
-util = require( 'util' )
+require "natural-compare-lite"
+util = require 'util'
 moment = require 'moment'
+
+
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
 
 routes = require( './hudson-test-manager/routes' )
@@ -68,7 +71,7 @@ class HudsonTestManager
     # Tell Hubot to broadcast test results to the specified room.
     robot.respond /check builds/i, ( msg ) =>
       @backend.checkForNewTestRun()
-    
+
     # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
@@ -221,17 +224,18 @@ class HudsonTestManager
   buildTestReport: ( project, failedTests, unassignedTests, assignedTests, includeAssignedTests ) ->
     if Object.keys( failedTests ).length == 0
       return [ "No test fail", {} ]
-    
+
     status = "Test report for #{project}\n"
     testno = 0
     announcement = {}
+
     for testname, detail of unassignedTests
-      status += "    #{++testno} - #{detail.name} is unassigned since #{moment(detail.since).fromNow()} (#{detail.url})\n"
+      status += "    #{++testno} - #{detail.name} is unassigned since #{moment( detail.since ).fromNow()} (#{detail.url})\n"
       announcement[testno] = testname
     if includeAssignedTests
       for testname, detail of assignedTests
         # TODO detail.assigned is the full JID. It would be nice to keep the full JID but report on the simple name
-        status += "    #{++testno} - assigned to (#{detail.assigned} since #{moment(detail.assignedDate).fromNow()}): #{detail.name} (#{detail.url})\n"
+        status += "    #{++testno} - assigned to (#{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}): #{detail.name} (#{detail.url})\n"
         announcement[testno] = testname
     return [ status, announcement ]
 
@@ -256,7 +260,7 @@ class HudsonTestManager
           status += " Was assigned to #{detail.assigned}."
         else
           status += " Was not assigned."
-        status += " Resolution time: #{moment(detail.since).from( moment(), true )}.\n"
+        status += " Resolution time: #{moment( detail.since ).from( moment(), true )}.\n"
 
     if Object.keys( newFailedTest ).length != 0
       testno = 0
@@ -319,13 +323,12 @@ class HudsonTestManager
 
   sendPrivateMesssage: ( to_jid, message ) ->
     envelope =
-      room: to_jid
       user:
+        privateChatJID: to_jid
         type: 'chat'
     @robot.send( envelope, message )
 
   sendGroupChatMesssage: ( to_jid, message ) ->
-    # TODO Validate if this works
     envelope =
       room: to_jid
       user:
