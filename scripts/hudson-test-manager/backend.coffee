@@ -77,14 +77,16 @@ class HudsonTestManagerBackendSingleton
       console.log "Checking builds..."
       storage = @readstorage()
       for projectname of storage.projects
-        console.log "  for project #{projectname}"
-        for buildname, lastbuilddetail of storage.projects[projectname]?.builds
-          console.log "    for buildname #{buildname}"
-          @hudson.getBuildStatus buildname, @robot.http, ( err, buildresult ) =>
-            if err
-              console.log err
-            else
-              @parseBuildResult projectname, buildname, lastbuilddetail, buildresult
+        do (projectname) ->
+          console.log "  for project #{projectname}"
+          for buildname, lastbuilddetail of storage.projects[projectname]?.builds
+            do ( buildname, lastbuilddetail ) ->
+              console.log "    for buildname #{buildname}"
+              @hudson.getBuildStatus buildname, @robot.http, ( err, buildresult ) =>
+                if err
+                  console.log err
+                else
+                  @parseBuildResult projectname, buildname, lastbuilddetail, buildresult
 
     parseBuildResult: ( projectname, buildname, lastbuilddetail, buildresult ) ->
       # Check if we have a new build and persist if not
