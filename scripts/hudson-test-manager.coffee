@@ -31,7 +31,7 @@
 # Author:  
 #   Manuel Darveau 
 #
-require "natural-compare-lite"
+sort-util = require './sort-util'
 moment = require 'moment'
 
 
@@ -228,14 +228,15 @@ class HudsonTestManager
     testno = 0
     announcement = {}
 
-    for testname, detail of unassignedTests
+    for detail in sort-util.getValuesSortedBy( unassignedTests, 'name' )
       status += "    #{++testno} - #{detail.name} is unassigned since #{moment( detail.since ).fromNow()} (#{detail.url})\n"
-      announcement[testno] = testname
+      announcement[testno] = detail.name
+      
     if includeAssignedTests
-      for testname, detail of assignedTests
+      for detail in sort-util.getValuesSortedBy( assignedTests, 'name' )
         # TODO detail.assigned is the full JID. It would be nice to keep the full JID but report on the simple name
         status += "    #{++testno} - assigned to (#{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}): #{detail.name} (#{detail.url})\n"
-        announcement[testno] = testname
+        announcement[testno] = detail.name
     return [ status, announcement ]
 
   #
@@ -253,7 +254,7 @@ class HudsonTestManager
     status = "Test report for #{projectname}\n"
     if Object.keys( fixedTests ).length != 0
       status += "  Fixed test(s):\n"
-      for testname, detail of fixedTests
+      for detail in sort-util.getValuesSortedBy( fixedTests, 'name' ) 
         status += "    #{detail.name}:"
         if detail.assigned
           status += " Was assigned to #{detail.assigned}."
@@ -265,9 +266,9 @@ class HudsonTestManager
       testno = 0
       announcement = {}
       status += "  New failure(s):\n"
-      for testname, detail of newFailedTest
+      for detail in sort-util.getValuesSortedBy( newFailedTest, 'name' )
         status += "    #{++testno} - #{detail.name} (#{detail.url})\n"
-        announcement[testno] = testname
+        announcement[testno] = detail.name
       @storeAnnouncement roomname, projectname, announcement
 
     # Trim the last \n
