@@ -10,7 +10,10 @@ rootworkdir = '/tmp/i18n'
 fs.mkdirSync rootworkdir unless fs.existsSync rootworkdir
 
 gitCommand = ( absworkdir, command ) ->
-  "git --work-tree=#{absworkdir} --git-dir=#{absworkdir}/.git #{command}"
+  command = "git "
+  command += "--work-tree=#{absworkdir} --git-dir=#{absworkdir}/.git " if absworkdir
+  command += command
+  return command
 
 gitStep = ( absworkdir, params ) ->
   return  ( previousstdout, callback ) ->
@@ -38,7 +41,7 @@ processProject = ( info ) ->
       gitStep( absworkdir, "pull" ) ,
       
       # Check for new commites
-      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\"' ),
+      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\" #{info.lastknowncommit}..' ),
       
       # Parse output
       ( result, callback ) ->
@@ -63,25 +66,38 @@ processProject = ( info ) ->
           console.log command
           console.log stdout unless error
           console.log "Error #{error} : stderr: #{stderr}" if error
-          callback error
+          callback error, gitlog[0]?.hash
       ,
-      ( callback ) ->
-        getUntranslatedKeyInProject absworkdir, callback
-    ], ( err, keys ) ->
+      ( latesthash, callback ) ->
+        getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
+          callback err, latesthash, untranslatedKeys
+          
+    ], ( err, latesthash, untranslatedKeys ) ->
       console.log err if err
-      for key in keys
+      for key in untranslatedKeys
         console.log key
-      # TODO set info.lastknowncommit
+      info.lastknowncommit = latesthash
       info.inprogress = false
+      # TODO store info
   
   else
     # TODO Clone inline with request
     console.log "Cloning repo #{info.giturl}"
-    exec "git clone -b #{info.branch} #{info.giturl} #{absworkdir}", ( error, stdout, stderr ) ->
-      console.log stdout
-      if error
-        console.log 'stderr: ' + stderr
-        console.log 'exec error: ' + error
+    async.waterfall [
+      # Pull latest changes
+      gitStep( null, "clone -b #{info.branch} #{info.giturl} #{absworkdir}" ) ,
+      
+      # Check for new commites
+      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\"} -n1\"' ),
+      
+      # Parse output
+      ( result, callback ) ->
+        gitlog = JSON.parse "#{result}"
+        info.lastknowncommit = gitlog.hash
+        callback err
+
+    ], ( err ) ->
+      # TODO store info
 
 getUntranslatedKeyInProject = ( project, callback ) ->
   fs.readFile Path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
