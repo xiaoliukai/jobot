@@ -46,39 +46,43 @@ processProject = ( info ) ->
       # Parse output
       ( result, callback ) ->
         gitlog = JSON.parse "[#{result.slice(0, - 1)}]"
-        console.log "Log:"
+        console.log "New commits:"
         for log in gitlog
           console.log "  #{log.hash}"
+        latesthash = gitlog[0]?.hash
   
         # Check if there is a new commit. If not, return and it will abort the chain.
-        if info.lastknowncommit == gitlog[0]?.hash
+        if info.lastknowncommit == latesthash
           info.inprogress = false
           return
         
         console.log "New commit for #{info.giturl} branch #{info.branch}"
 
-        # Trigger a mvn clean, 
-        # module: ftk-i18n-extract
-        # goal: process-resources
-        # profile: i18n-xliff-extract
-        command = "mvn -f #{absworkdir}/pom.xml -P i18n-xliff-extract process-resources" # TODO clean
-        exec command, ( error, stdout, stderr ) ->
+        # Call maven to extract i18n keys
+        command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
+        exec command, {}
+          timeout: 10*60*1000 # 10 minutes
+          maxBuffer: 1*1024*1024 # 1 MB
+        ,( error, stdout, stderr ) ->
+          # TODO Handle failure because of compile fail or other. Check error.code
           console.log command
           console.log stdout unless error
           console.log "Error #{error} : stderr: #{stderr}" if error
-          callback error, gitlog[0]?.hash
+          callback error, latesthash
       ,
       ( latesthash, callback ) ->
         getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
           callback err, latesthash, untranslatedKeys
           
     ], ( err, latesthash, untranslatedKeys ) ->
-      console.log err if err
-      for key in untranslatedKeys
-        console.log key
-      info.lastknowncommit = latesthash
-      info.inprogress = false
-      # TODO store info
+      if err
+        console.log err
+      else
+        for key in untranslatedKeys
+          console.log key
+        info.lastknowncommit = latesthash
+        info.inprogress = false
+        # TODO store info
   
   else
     # TODO Clone inline with request
@@ -97,7 +101,11 @@ processProject = ( info ) ->
         callback err
 
     ], ( err ) ->
-      # TODO store info
+      if err
+        console.log err
+      else
+        # TODO store info
+        console.log "Clone completed"
 
 getUntranslatedKeyInProject = ( project, callback ) ->
   fs.readFile Path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
