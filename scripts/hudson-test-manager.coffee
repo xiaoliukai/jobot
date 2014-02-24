@@ -31,14 +31,12 @@
 # Author:  
 #   Manuel Darveau 
 #
-sort_util = require './sort_util'
 moment = require 'moment'
 
-
+sort_util = require './util/sort_util'
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
-
 routes = require( './hudson-test-manager/routes' )
-test_manager_util = require( './hudson-test-manager/util' )
+test_manager_util = require( './hudson-test-manager/test_string_parser' )
 
 class HudsonTestManager
 

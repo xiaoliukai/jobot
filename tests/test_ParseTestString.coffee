@@ -1,6 +1,6 @@
 assert = require( 'assert' )
 
-util = require( '../scripts/hudson-test-manager/util' )
+util = require( '../scripts/hudson-test-manager/test_string_parser' )
 
 assertParseTestString = ( text, expectedTests... ) ->
   tests = util.parseTestString text
