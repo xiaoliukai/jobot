@@ -9,4 +9,4 @@ module.exports.getValuesSortedBy = ( map, sortby ) ->
   sortedValues = []
   for key in sortedKeys
     sortedValues.push map[key]
-  return sortedValues 
+  return sortedValues

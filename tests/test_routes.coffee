@@ -28,7 +28,7 @@ routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$.match 'Broadcast failed te
 routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$.match 'Broadcast failed tests for project my_project to room my_room', 'my_project', 'my_room'
 routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$.match 'Broadcast failed tests for project my_project.version-branch to room my_room', 'my_project.version-branch', 'my_room'
 
-routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_.match 'Stop broadcasting failed tests for project myproject', 'myproject'
+routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$.match 'Stop broadcasting failed tests for project myproject to room myroom', 'myproject', 'myroom'
 
 routes.WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$.match 'Watch failed tests for project myproject using build thebuild', 'myproject', 'thebuild' 
 

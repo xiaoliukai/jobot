@@ -29,7 +29,7 @@ msg =
       type: 'groupchat'
       room: 'myconf@conferences.jabber.com'
       name: 'john'
-  reply: ( msg ) ->
+  send: ( msg ) ->
     assert.equal msg, 'Test report for'
 backend.getProjects = () ->
   projects = {}
@@ -58,30 +58,39 @@ assert.equal manager.state['myconf@conferences.jabber.com'].lastannouncement.fai
 # buildTestReport
 #
 [robot, backend, manager] = setup()
-failedTests = {}
 unassignedTests = {}
+unassignedTests['com.test2'] =
+  name: 'com.test2'
+  since: moment()
+  url: 'http://hudson.acme.com/com.test2'
 unassignedTests['com.test1'] =
   name: 'com.test1'
   since: moment()
   url: 'http://hudson.acme.com/com.test1'
 assignedTests = {}
-assignedTests['com.test2'] =
-  name: 'com.test2'
+assignedTests['com.test3'] =
+  name: 'com.test3'
   since: moment()
-  url: 'http://hudson.acme.com/com.test2'
+  url: 'http://hudson.acme.com/com.test3'
   assigned: 'johndoe'
   assignedDate: moment()
+failedTests = {}
+failedTests['com.test1'] = unassignedTests['com.test1']
+failedTests['com.test2'] = unassignedTests['com.test2']
+failedTests['com.test3'] = assignedTests['com.test3']
   
 [status, announcement] = manager.buildTestReport 'projectA', failedTests, unassignedTests, assignedTests, true
+assert status
+assert.equal Object.keys( announcement ).length, 3
+assert.equal announcement[1], 'com.test1'
+assert.equal announcement[2], 'com.test2'
+assert.equal announcement[3], 'com.test3'
+
+[status, announcement] = manager.buildTestReport 'projectA', failedTests, unassignedTests, assignedTests, false
 assert status
 assert.equal Object.keys( announcement ).length, 2
 assert.equal announcement[1], 'com.test1'
 assert.equal announcement[2], 'com.test2'
-
-[status, announcement] = manager.buildTestReport 'projectA', failedTests, unassignedTests, assignedTests, false
-assert status
-assert.equal Object.keys( announcement ).length, 1
-assert.equal announcement[1], 'com.test1'
 
 #
 # processNewTestResult

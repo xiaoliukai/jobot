@@ -3,14 +3,15 @@ assert = require( 'assert' )
 util = require( '../scripts/hudson-test-manager/util' )
 
 assertParseTestString = ( text, expectedTests... ) ->
-  util.parseTestString text, ( err, tests ) ->
-    assert.ifError err
-    for test, index in tests
-      assert.strictEqual( test, expectedTests[index], "Expected '#{expectedTests[index]}' at index #{index} but got '#{test}' for '#{text}'" )
+  tests = util.parseTestString text
+  assert.equal Object.keys( tests ).length, expectedTests.length
+  for test, index in tests
+    assert.strictEqual( test, expectedTests[index], "Expected '#{expectedTests[index]}' at index #{index} but got '#{test}' for '#{text}'" )
 
 assertInvalidTestString = ( text ) ->
-  util.parseTestString text, ( err, tests ) ->
-    assert.fail err, 'Some error', "Expected error" unless err
+  assert.throws( ()->
+    util.parseTestString text
+    , Error );
       
 #Test single elements
 assertParseTestString '1', 1
