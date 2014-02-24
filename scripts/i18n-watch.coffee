@@ -86,8 +86,8 @@ class I18nWatcher
 module.exports = ( robot ) ->
   new I18nWatcher( robot )
 
-watcher = new I18nWatcher();
-watcher.getUntranslatedKeyInProject '/Users/mdarveau/git_workspace/ftk', ( err, keys ) ->
-  console.log err if err
-  for key in keys
-    console.log key
+#watcher = new I18nWatcher();
+#watcher.getUntranslatedKeyInProject '/Users/mdarveau/git_workspace/ftk', ( err, keys ) ->
+#  console.log err if err
+#  for key in keys
+#    console.log key

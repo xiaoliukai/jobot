@@ -32,7 +32,6 @@
 #   Manuel Darveau 
 #
 require "natural-compare-lite"
-util = require 'util'
 moment = require 'moment'
 
 

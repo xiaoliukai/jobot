@@ -60,7 +60,7 @@ processProject = ( info ) ->
 
         # Call maven to extract i18n keys
         command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
-        exec command, {}
+        exec command,
           timeout: 10*60*1000 # 10 minutes
           maxBuffer: 1*1024*1024 # 1 MB
         ,( error, stdout, stderr ) ->
