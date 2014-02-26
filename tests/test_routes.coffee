@@ -56,4 +56,7 @@ routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME.match 'Assign 1,com.eightd.8d.com.So
 
 routes.SHOW_TEST_REPORT_FOR_PROJECT_$.match 'Show test report for project myproject', 'myproject'
 
+routes.SHOW_TEST_ASSIGNED_TO_ME.match 'Show test assigned to me'
+routes.SHOW_TEST_ASSIGNED_TO_ME.match 'Show tests assigned to me'
+
 console.log "Test passed"

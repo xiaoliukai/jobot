@@ -16,7 +16,8 @@
 #   hubot Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room. 
 #   hubot Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room. 
 #   hubot Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project. 
-#   hubot Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project. 
+#   hubot Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project.
+#   hubot Show test(s) assigned to me - Report tests assigned to you
 # 
 #   hubot Set manager for project {} to {} - For security reason, must be sent in groupchat 
 #   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
@@ -102,6 +103,10 @@ class HudsonTestManager
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
       @handleShowTestReportForProject msg
 
+    # Display tests assigned to requesting user
+    robot.respond routes.SHOW_TEST_ASSIGNED_TO_ME, ( msg ) =>
+      @handleShowTestAssignedToMe msg
+
   handleBroadcastTest: ( msg ) ->
     project = msg.match[1]
     room = msg.match[2]
@@ -162,9 +167,10 @@ class HudsonTestManager
       brainuser = @robot.brain.userForId user
       if brainuser
         user = brainuser.privateChatJID
-      else
-        msg.reply( "Sorry, I don't know user '#{user}'" )
-        return
+    
+    unless user
+      msg.reply( "Sorry, I don't know user '#{user}'" )
+      return
 
     try
       tests = test_manager_util.parseTestString testsString
@@ -193,7 +199,6 @@ class HudsonTestManager
 
   #
   # Call back with the test report and store annoucement if sent to a room.
-  # This is not done in the route's handler to ease testing
   #
   handleShowTestReportForProject: ( msg ) ->
     projectname = msg.match[1]
@@ -215,6 +220,27 @@ class HudsonTestManager
         console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
   #
+  # Return tests assigned to requesting user
+  #
+  handleShowTestAssignedToMe: ( msg ) ->
+    user = msg.envelope.user.privateChatJID
+    unless user
+      msg.reply "Sorry, I do not know you :-P"
+      return
+
+    report = ""
+    for projectname, projectdetail of @backend.getProjects()
+      projectNamePrinted = false
+      for testname, testdetail of projectdetail.failedtests
+        if testdetail.assigned == user
+          unless projectNamePrinted
+            report += "Project #{projectname}:\n"
+            projectNamePrinted = true
+          report += "  #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()} (#{testdetail.url})\n"
+
+    msg.send report
+        
+  #
   # Build a test report.
   # Return [String: test report, announcement{1: testname, 2: testname, ...}]
   #
@@ -233,7 +259,7 @@ class HudsonTestManager
     if includeAssignedTests
       for detail in sort_util.getValuesSortedBy( assignedTests, 'name' )
         # TODO detail.assigned is the full JID. It would be nice to keep the full JID but report on the simple name
-        status += "    #{++testno} - assigned to (#{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}): #{detail.name} (#{detail.url})\n"
+        status += "    #{++testno} - assigned to #{detail.assigned.split( '@' )[0]} since #{moment( detail.assignedDate ).fromNow()}: #{detail.name} (#{detail.url})\n"
         announcement[testno] = detail.name
     return [ status, announcement ]
 

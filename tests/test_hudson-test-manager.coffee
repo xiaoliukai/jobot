@@ -129,16 +129,6 @@ manager.processNewTestResult "projectA", "buildA", fixedTests, newFailedTest
 # handleAssignTest
 #
 [robot, backend, manager] = setup()
-msg = 
-  match: [undefined, '1,2,3-5,com.test6', undefined, 'me']
-  envelope:
-    user:
-      type: 'groupchat'
-      room: 'roomA@conferences.jabber.com'
-      name: 'john'
-      privateChatJID: 'johndoe@jabber.com'
-  reply: ( msg ) ->
-    assert.equal msg, 'Ack. Tests assigned to johndoe'
 
 backend.assignTests = ( project, tests, user ) ->
   assert.equal project, 'projectA'
@@ -164,6 +154,41 @@ manager.getLastAnnouncement = ( roomname ) ->
     projectname: 'projectA'
     failedtests: tests
     
+msg = 
+  match: [undefined, '1,2,3-5,com.test6', undefined, 'me']
+  envelope:
+    user:
+      type: 'groupchat'
+      room: 'roomA@conferences.jabber.com'
+      name: 'john'
+      privateChatJID: 'johndoe@jabber.com'
+  reply: ( msg ) ->
+    assert.equal msg, 'Ack. Tests assigned to johndoe'
 manager.handleAssignTest msg  
-    
+
+#
+# handleAssignTest
+#
+[robot, backend, manager] = setup()
+backend.getProjects = ( project, tests, user ) ->
+  projects = {}
+  projects['projectA'] = {}
+  projects['projectA'].failedtests = {}
+  projects['projectA'].failedtests['com.test1'] =
+    name: 'com.test1'
+    assigned: 'johndoe@jabber.com'
+    assignedDate: moment()
+    url: 'some url'
+  return projects
+
+msg = 
+  match: [undefined, 'show tests assigned to me']
+  envelope:
+    user:
+      type: 'chat'
+      privateChatJID: 'johndoe@jabber.com'
+  send: ( msg ) ->
+    assert.equal msg, 'Project projectA:\n  com.test1 since a few seconds ago (some url)\n'
+manager.handleShowTestAssignedToMe msg
+
 console.log "Success"
