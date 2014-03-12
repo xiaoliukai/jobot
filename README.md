@@ -1,9 +1,8 @@
 Dependencies:
   * Require patched hubot to forward http options and HUBOT_ADAPTER_PATH workaround. See https://github.com/MacKeeper/hubot
-  * Require patched hubot-xmpp since latest release does not work at all. See https://github.com/markstory/hubot-xmpp/issues/59 and https://github.com/markstory/hubot-xmpp/pull/60
   * Require patched scoped-http-client to accept 'rejectUnauthorized: false'. See https://github.com/MacKeeper/node-scoped-http-client
 
-To use forks of ```hubot```, ```hubot-xmpp``` and ```scoped-http-client```:
+To use forks of ```hubot``` and ```scoped-http-client```:
   * It is highly recommended to git clone dependencies directly in node_modules
 
 Configure IntelliJ:
@@ -16,7 +15,6 @@ Configure IntelliJ:
       * On the generated ```.js``` file, run in debug and the ```.coffee``` file breakpoints will trigger.
       * You will have to run:
         * ```coffee -cm node_modules/hubot```
-        * ```coffee -cm node_modules/hubot-xmpp```
         * ```coffee -cm node_modules/hubot-scripts/src/scripts/file-brain.coffee```
         * ```rm node_modules/hubot-scripts/src/scripts/file-brain.coffee``` the file won't load in debug (see https://github.com/github/hubot/issues/653)
       *Also, make sure there is no ```hubot``` directory in ```node_modules/hubot-xmpp/node_modules``` else messages wont get to the handlers. This is due to two classes with same name loaded but since 
