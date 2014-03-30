@@ -23,7 +23,8 @@
 #   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
 # 
 #   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user 
-#   hubot Show test (report for project) {} 
+#   hubot Show test (report for project) {}
+#   hubot Show unassigned tests for (project) {}
 # 
 # Notes:  
 #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project  
