@@ -60,6 +60,9 @@ routes.SHOW_TEST_REPORT_FOR_PROJECT_$.match 'Show test report myproject', 'mypro
 routes.SHOW_TEST_REPORT_FOR_PROJECT_$.match 'Show test report for myproject', 'myproject'
 routes.SHOW_TEST_REPORT_FOR_PROJECT_$.match 'Show test for myproject', 'myproject'
 
+routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$.match 'Show unassigned tests for myproject', 'myproject'
+routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$.match 'Show unassigned tests for project myproject', 'myproject'
+
 routes.SHOW_TEST_ASSIGNED_TO_ME.match 'Show test assigned to me'
 routes.SHOW_TEST_ASSIGNED_TO_ME.match 'Show tests assigned to me'
 

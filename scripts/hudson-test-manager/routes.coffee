@@ -10,5 +10,6 @@ class HudsonTestManagerRoutes
   @ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME = /Assign (.*?)(?: of project (\S*))? to (me|\S*)/i
   @SHOW_TEST_REPORT_FOR_PROJECT_$ = /Show tests? (?:report )?(?:for )?(?:project )?(\S*)/i
   @SHOW_TEST_ASSIGNED_TO_ME = /Show tests? assigned to me/i
+  @SHOW_UNASSIGNED_TEST_FOR_PROJECT_$ = /Show unassigned tests? for (?:project )?(\S*)/i
   
 module.exports = HudsonTestManagerRoutes 

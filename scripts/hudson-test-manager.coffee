@@ -99,13 +99,16 @@ class HudsonTestManager
       @handleAssignTest msg
 
     # Display failed test and assignee
-    # TODO the "for project" part or the route should be optional
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
       @handleShowTestReportForProject msg
 
     # Display tests assigned to requesting user
     robot.respond routes.SHOW_TEST_ASSIGNED_TO_ME, ( msg ) =>
       @handleShowTestAssignedToMe msg
+
+    # Display unassigned tests
+    robot.respond routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$, ( msg ) =>
+      @handleShowUnassignedTests msg
 
   handleBroadcastTest: ( msg ) ->
     project = msg.match[1]
@@ -157,7 +160,7 @@ class HudsonTestManager
     user = msg.match[3]
 
     unless project
-      msg.reply( "For which project? Please send something like 'Assign x,y,z of project Toto to me'" )
+      msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )
       return
 
     if user.toUpperCase() == "ME"
@@ -219,6 +222,28 @@ class HudsonTestManager
       else
         console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
+  #
+  # Call back with the unassigned test report and store annoucement if sent to a room.
+  #
+  handleShowUnassignedTests: ( msg ) ->
+    projectname = msg.match[1]
+    unless @backend.getProjects()[projectname]
+      msg.reply "Sorry, I do not know #{projectname}"
+      return
+
+    [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
+    [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, false )
+    msg.send report
+
+    # Only store announcement if sent to a room and it's the project room
+    if msg.envelope.user.type == 'groupchat'
+      # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
+      projectRoomName = @backend.getBroadcastRoomForProject projectname
+      if msg.envelope.user.room == projectRoomName
+        @storeAnnouncement projectRoomName, projectname, announcement
+      else
+        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"    
+        
   #
   # Return tests assigned to requesting user
   #
