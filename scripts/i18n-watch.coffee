@@ -14,6 +14,7 @@
 # Author:  
 #   Manuel Darveau 
 #
+
 fs = require 'fs'
 Path = require 'path'
 xpath = require 'xpath'
@@ -22,52 +23,71 @@ require( "natural-compare-lite" )
 
 class I18nWatcher
 
-  constructor: ( @robot ) ->
+  constructor: ( @robot, skipStart ) ->
     @state = {}
+    @workdirlocks = {}
+    
+    @rootworkdir = '/tmp/i18n'
+    fs.mkdirSync @rootworkdir unless fs.existsSync @rootworkdir
+    
+    setInterval( @.loop, 1 * 60 * 1000 ) unless skipStart
+    
+    # Tell Hubot to broadcast extract results to the specified room.
+    robot.respond /Watch translations on git repo (\S*) branch (\S*) and broadcast to room (\S*)/i, ( msg ) =>
+      repoURL = msg.match[1]
+      branch = msg.match[2]
+      room = msg.match[3]
+    
+      unless repoURL
+        msg.reply( "You must specify a repo url" )
+        return
 
-    # Tell Hubot to broadcast test results to the specified room.
-    robot.respond /Watch translations on git repo (\S*) branch (\S*)/i, ( msg ) =>
-      @backend.checkForNewTestRun()
+      unless branch
+        msg.reply( "You must specify a branch" )
+        return
+        
+      @watchProject repoURL, branch, room
 
-    start: () ->
-      # Setup watchdog
-      setInterval( @.loop, 1 * 60 * 1000 )
-
+      
   loop: () =>
     # Check for new commits
     @checkForChanges()
 
-  watchProject: ( project ) ->
-    giturl = msg.match[1]
-    branch = msg.match[2]
-    @persist ( storage ) ->
-      info =
-        'giturl': giturl
-        'branch': branch
-        'workdir': Math.random().toString( 36 ).substring( 10 )
-      storage.projects.push info
-    msg.send( "Will watch translations of #{giturl} branch #{branch}" )
+  watchProject: ( repoURL, branch, room ) ->
+    info =
+      giturl: repoURL
+      branch: branch
+      workdir: Math.random().toString( 36 ).substring( 10 )
+      room: room
+    
+    try
+      msg.send( "Cloning..." )
+      @cloneRepo info, ( err )->
+        if err
+          msg.send( "Clone failed: #{err}" )
+        else
+          @persist ( storage ) ->
+            storage.projects.push info
+          msg.send( "Will watch translations of #{info.giturl} branch #{info.branch} in working dir #{info.workdir}" )
+    catch e
+      msg.send( "Error: #{e}" )
 
   checkForChanges: () ->
     console.log "Looking for untranslated keys..."
     storage = @readstorage()
     for info in storage.projects
-      console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
-
-
-  getUntranslatedKeyInProject: ( project, callback ) ->
-    fs.readFile Path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
-      if err
-        callback ( err )
-        return
-      dom = new dom().parseFromString( data.toString() )
-      nodes = xpath.select( "//trans-unit[target='']/@id", dom )
-      untranslatedKeys = []
-      for id in nodes
-        untranslatedKeys.push id.value
-      untranslatedKeys.sort String.naturalCompare
-      callback null, untranslatedKeys
-
+      absworkdir = path.join @rootworkdir, info.workdir
+      if fs.existsSync absworkdir
+        console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
+        @processProject info, (err, info)->
+          message = "Untranslated keys for #{info.giturl}/#{info.branch}:"
+          for key in info.untranslatedKeys
+            message = "  - #{key}"
+          @sendGroupChatMesssage info.room, message
+      else
+        console.log "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
+        @sendGroupChatMesssage info.room, "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
+          
   # Storage
   persist: ( callback ) ->
     storage = @robot.brain.get 'I18nWatcher'
@@ -82,6 +102,128 @@ class I18nWatcher
     storage.projects?= []
     return storage
 
+    
+#############################
+  
+  gitCommand: ( absworkdir, command ) ->
+    command = "git "
+    command += "--work-tree=#{absworkdir} --git-dir=#{absworkdir}/.git " if absworkdir
+    command += command
+    return command
+
+  gitStep: ( absworkdir, params ) ->
+    return  ( previousstdout, callback ) ->
+      callback = previousstdout unless callback
+      command = gitCommand absworkdir, params
+      exec command, ( error, stdout, stderr ) ->
+        console.log command
+        console.log stdout unless error
+        console.log "Error #{error} : stderr: #{stderr}" if error
+        callback error, stdout
+
+  #
+  #  info =
+  #    giturl: The git repo URL
+  #    branch: The branch name or master
+  #    workdir: A unique working dir used for the clone/checkout
+  #
+  processProject: ( info ) ->
+    absworkdir = path.join @rootworkdir, info.workdir
+    
+    if workdirlocks[info.workdir]
+      console.log "#{info.giturl} branch #{info.branch} is already in progress"
+      return
+    
+    workdirlocks[info.workdir] = true
+          
+    console.log "Checking for updates"
+    async.waterfall [
+      # Pull latest changes
+      gitStep( absworkdir, "pull" ) ,
+      
+      # Check for new commites
+      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\" #{info.lastknowncommit}..' ),
+      
+      # Parse output
+      ( result, callback ) ->
+        gitlog = JSON.parse "[#{result.slice(0, - 1)}]"
+        latesthash = gitlog[0]?.hash
+  
+        # Check if there is a new commit. If not, return and it will abort the chain.
+        if info.lastknowncommit == latesthash
+          delete workdirlocks[info.workdir]
+          console.log "No new commit for #{info.giturl} branch #{info.branch}. Last commit is #{info.lastknowncommit}"
+          return
+        
+        console.log "New commit for #{info.giturl} branch #{info.branch}"
+
+        # Call maven to extract i18n keys
+        command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
+        exec command,
+          timeout: 10*60*1000 # 10 minutes
+          maxBuffer: 1*1024*1024 # 1 MB
+        ,( error, stdout, stderr ) ->
+          # TODO Handle failure because of compile fail or other. Check error.code
+          console.log command
+          console.log stdout unless error
+          console.log "Error #{error} : stderr: #{stderr}" if error
+          callback error, latesthash
+      ,
+      ( latesthash, callback ) ->
+        getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
+          callback err, latesthash, untranslatedKeys
+          
+    ], ( err, latesthash, untranslatedKeys ) ->
+      delete workdirlocks[info.workdir]
+      if err
+        callback err
+      else
+        # store info
+        @persist ( storage ) ->
+          info.lastknowncommit = latesthash
+          info.untranslatedKeys = untranslatedKeys
+        callback null, info
+  
+  
+  cloneRepo: ( info, callback ) ->
+    console.log "Cloning repo #{info.giturl}"
+    async.waterfall [
+      # Pull latest changes
+      gitStep( null, "clone -b #{info.branch} #{info.giturl} #{absworkdir}" ) ,
+      
+      # Check for new commites
+      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\"} -n1\"' ),
+      
+      # Parse output
+      ( result, callback ) ->
+        gitlog = JSON.parse "#{result}"
+        info.lastknowncommit = gitlog.hash
+        callback err
+
+    ], ( err ) ->
+      callback err
+          
+  getUntranslatedKeyInProject: ( project, callback ) ->
+    fs.readFile Path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
+      if err
+        callback ( err )
+        return
+      dom = new dom().parseFromString( data.toString() )
+      nodes = xpath.select( "//trans-unit[target='']/@id", dom )
+      untranslatedKeys = []
+      for id in nodes
+        untranslatedKeys.push id.value
+      untranslatedKeys.sort String.naturalCompare
+      callback null, untranslatedKeys
+
+#############################
+
+  sendGroupChatMesssage: ( to_jid, message ) ->
+    envelope =
+      room: to_jid
+      user:
+        type: 'groupchat'
+    @robot.send( envelope, message )
 
 module.exports = ( robot ) ->
   new I18nWatcher( robot )

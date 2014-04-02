@@ -23,7 +23,8 @@
 #   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
 # 
 #   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user 
-#   hubot Show test report for project {} 
+#   hubot Show test (report for project) {}
+#   hubot Show unassigned tests for (project) {}
 # 
 # Notes:  
 #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project  
@@ -98,14 +99,17 @@ class HudsonTestManager
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       @handleAssignTest msg
 
-    # Display failed test and assignee
-    # TODO the "for project" part or the route should be optional
-    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
-      @handleShowTestReportForProject msg
-
     # Display tests assigned to requesting user
     robot.respond routes.SHOW_TEST_ASSIGNED_TO_ME, ( msg ) =>
       @handleShowTestAssignedToMe msg
+
+    # Display failed test and assignee
+    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
+      @handleShowTestReportForProject msg
+      
+    # Display unassigned tests
+    robot.respond routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$, ( msg ) =>
+      @handleShowUnassignedTests msg
 
   handleBroadcastTest: ( msg ) ->
     project = msg.match[1]
@@ -157,7 +161,7 @@ class HudsonTestManager
     user = msg.match[3]
 
     unless project
-      msg.reply( "For which project? Please send something like 'Assign x,y,z of project Toto to me'" )
+      msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )
       return
 
     if user.toUpperCase() == "ME"
@@ -219,6 +223,28 @@ class HudsonTestManager
       else
         console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
+  #
+  # Call back with the unassigned test report and store annoucement if sent to a room.
+  #
+  handleShowUnassignedTests: ( msg ) ->
+    projectname = msg.match[1]
+    unless @backend.getProjects()[projectname]
+      msg.reply "Sorry, I do not know #{projectname}"
+      return
+
+    [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
+    [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, false )
+    msg.send report
+
+    # Only store announcement if sent to a room and it's the project room
+    if msg.envelope.user.type == 'groupchat'
+      # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
+      projectRoomName = @backend.getBroadcastRoomForProject projectname
+      if msg.envelope.user.room == projectRoomName
+        @storeAnnouncement projectRoomName, projectname, announcement
+      else
+        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"    
+        
   #
   # Return tests assigned to requesting user
   #
@@ -334,7 +360,7 @@ class HudsonTestManager
 
     [report, announcement] = @buildTestReport( project, failedTests, unassignedTests, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
-    sendGroupChatMesssage roomname, report
+    @sendGroupChatMesssage roomname, report
 
   # TODO Notify assignee of test fail past warning threshold
   # TODO Notify manager of test fail past escalade threshold

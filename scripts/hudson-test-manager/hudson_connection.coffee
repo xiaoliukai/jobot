@@ -14,7 +14,8 @@ class HudsonConnection
   #
 
   authRequest: ( http, url ) ->
-    req = http( url, {rejectUnauthorized: false} )
+    #req = http( url, {rejectUnauthorized: false} )
+    req = http( url )
     req.auth( 'jobot', 'jobot' )
     return req
 
