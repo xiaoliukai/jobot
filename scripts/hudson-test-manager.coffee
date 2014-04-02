@@ -99,14 +99,14 @@ class HudsonTestManager
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       @handleAssignTest msg
 
-    # Display failed test and assignee
-    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
-      @handleShowTestReportForProject msg
-
     # Display tests assigned to requesting user
     robot.respond routes.SHOW_TEST_ASSIGNED_TO_ME, ( msg ) =>
       @handleShowTestAssignedToMe msg
 
+    # Display failed test and assignee
+    robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
+      @handleShowTestReportForProject msg
+      
     # Display unassigned tests
     robot.respond routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$, ( msg ) =>
       @handleShowUnassignedTests msg
@@ -360,7 +360,7 @@ class HudsonTestManager
 
     [report, announcement] = @buildTestReport( project, failedTests, unassignedTests, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
-    sendGroupChatMesssage roomname, report
+    @sendGroupChatMesssage roomname, report
 
   # TODO Notify assignee of test fail past warning threshold
   # TODO Notify manager of test fail past escalade threshold
