@@ -17,7 +17,7 @@ exec 'hostname', (error, stdout, stderr) ->
   process.env.HUBOT_XMPP_ROOMS="deploy@conference.#{hostname}"
   process.env.HUBOT_XMPP_HOST="localhost"
   process.env.HUBOT_XMPP_PORT="5222"
-  process.env.HUDSON_TEST_MANAGER_URL='https://solic1.dev.8d.com:8443'
+  process.env.HUDSON_TEST_MANAGER_URL='https://hudson.priv.8d.com:8443'
   ##################
   
   require './run_hubot'

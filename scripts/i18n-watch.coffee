@@ -9,16 +9,18 @@
 #   TODO  
 #  
 # Commands:
-#   hubot TODO
+#   hubot Watch translations on git repo {git url} branch {branch name} and broadcast to room {full room name}
 #
 # Author:  
 #   Manuel Darveau 
 #
 
 fs = require 'fs'
-Path = require 'path'
+path = require 'path'
+async = require 'async'
 xpath = require 'xpath'
 dom = require( 'xmldom' ).DOMParser
+exec = require( 'child_process' ).exec
 require( "natural-compare-lite" )
 
 class I18nWatcher
@@ -46,14 +48,15 @@ class I18nWatcher
         msg.reply( "You must specify a branch" )
         return
         
-      @watchProject repoURL, branch, room
+      @watchProject repoURL, branch, room, ( message )->
+        msg.send message
 
       
   loop: () =>
     # Check for new commits
     @checkForChanges()
 
-  watchProject: ( repoURL, branch, room ) ->
+  watchProject: ( repoURL, branch, room, replyHandler ) ->
     info =
       giturl: repoURL
       branch: branch
@@ -61,16 +64,16 @@ class I18nWatcher
       room: room
     
     try
-      msg.send( "Cloning..." )
+      replyHandler( "Cloning..." )
       @cloneRepo info, ( err )->
         if err
-          msg.send( "Clone failed: #{err}" )
+          replyHandler( "Clone failed: #{err}" )
         else
           @persist ( storage ) ->
             storage.projects.push info
-          msg.send( "Will watch translations of #{info.giturl} branch #{info.branch} in working dir #{info.workdir}" )
+          replyHandler( "Will watch translations of #{info.giturl} branch #{info.branch} in working dir #{info.workdir}" )
     catch e
-      msg.send( "Error: #{e}" )
+      replyHandler( "Error: #{e}" )
 
   checkForChanges: () ->
     console.log "Looking for untranslated keys..."
@@ -96,6 +99,7 @@ class I18nWatcher
     callback( storage )
     @robot.brain.set 'I18nWatcher', storage
     @robot.brain.save()
+    
   readstorage: () ->
     storage = @robot.brain.get 'I18nWatcher'
     storage?={}
@@ -105,16 +109,16 @@ class I18nWatcher
     
 #############################
   
-  gitCommand: ( absworkdir, command ) ->
+  gitCommand: ( absworkdir, action ) ->
     command = "git "
     command += "--work-tree=#{absworkdir} --git-dir=#{absworkdir}/.git " if absworkdir
-    command += command
+    command += action
     return command
 
   gitStep: ( absworkdir, params ) ->
-    return  ( previousstdout, callback ) ->
+    return  ( previousstdout, callback ) =>
       callback = previousstdout unless callback
-      command = gitCommand absworkdir, params
+      command = @gitCommand absworkdir, params
       exec command, ( error, stdout, stderr ) ->
         console.log command
         console.log stdout unless error
@@ -127,31 +131,31 @@ class I18nWatcher
   #    branch: The branch name or master
   #    workdir: A unique working dir used for the clone/checkout
   #
-  processProject: ( info ) ->
+  processProject: ( info, callback ) ->
     absworkdir = path.join @rootworkdir, info.workdir
     
-    if workdirlocks[info.workdir]
+    if @workdirlocks[info.workdir]
       console.log "#{info.giturl} branch #{info.branch} is already in progress"
       return
     
-    workdirlocks[info.workdir] = true
+    @workdirlocks[info.workdir] = true
           
     console.log "Checking for updates"
     async.waterfall [
       # Pull latest changes
-      gitStep( absworkdir, "pull" ) ,
+      @gitStep( absworkdir, "pull" ) ,
       
       # Check for new commites
-      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\" #{info.lastknowncommit}..' ),
+      @gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\" #{info.lastknowncommit}..' ),
       
       # Parse output
-      ( result, callback ) ->
+      ( result, callback ) =>
         gitlog = JSON.parse "[#{result.slice(0, - 1)}]"
         latesthash = gitlog[0]?.hash
   
         # Check if there is a new commit. If not, return and it will abort the chain.
         if info.lastknowncommit == latesthash
-          delete workdirlocks[info.workdir]
+          delete @workdirlocks[info.workdir]
           console.log "No new commit for #{info.giturl} branch #{info.branch}. Last commit is #{info.lastknowncommit}"
           return
         
@@ -170,11 +174,12 @@ class I18nWatcher
           callback error, latesthash
       ,
       ( latesthash, callback ) ->
-        getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
+        @getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
           callback err, latesthash, untranslatedKeys
           
-    ], ( err, latesthash, untranslatedKeys ) ->
-      delete workdirlocks[info.workdir]
+    ], ( err, latesthash, untranslatedKeys ) =>
+      console.log err
+      delete @workdirlocks[info.workdir]
       if err
         callback err
       else
@@ -186,25 +191,26 @@ class I18nWatcher
   
   
   cloneRepo: ( info, callback ) ->
-    console.log "Cloning repo #{info.giturl}"
+    absworkdir = path.join @rootworkdir, info.workdir
+    console.log "Cloning repo #{info.giturl} to #{absworkdir}"
     async.waterfall [
       # Pull latest changes
-      gitStep( null, "clone -b #{info.branch} #{info.giturl} #{absworkdir}" ) ,
+      @gitStep( null, "clone -b #{info.branch} #{info.giturl} #{absworkdir}" ) ,
       
       # Check for new commites
-      gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\"} -n1\"' ),
+      @gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\"}\" -n1' ),
       
       # Parse output
       ( result, callback ) ->
         gitlog = JSON.parse "#{result}"
         info.lastknowncommit = gitlog.hash
-        callback err
+        callback null, info.lastknowncommit
 
     ], ( err ) ->
       callback err
           
   getUntranslatedKeyInProject: ( project, callback ) ->
-    fs.readFile Path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
+    fs.readFile path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
       if err
         callback ( err )
         return
@@ -225,8 +231,8 @@ class I18nWatcher
         type: 'groupchat'
     @robot.send( envelope, message )
 
-module.exports = ( robot ) ->
-  new I18nWatcher( robot )
+module.exports = ( robot, skipStart ) ->
+  new I18nWatcher( robot, skipStart )
 
 #watcher = new I18nWatcher();
 #watcher.getUntranslatedKeyInProject '/Users/mdarveau/git_workspace/ftk', ( err, keys ) ->
