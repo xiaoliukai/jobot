@@ -119,8 +119,8 @@ class I18nWatcher
     return  ( previousstdout, callback ) =>
       callback = previousstdout unless callback
       command = @gitCommand absworkdir, params
+      console.log command
       exec command, ( error, stdout, stderr ) ->
-        console.log command
         console.log stdout unless error
         console.log "Error #{error} : stderr: #{stderr}" if error
         callback error, stdout
@@ -142,6 +142,10 @@ class I18nWatcher
           
     console.log "Checking for updates"
     async.waterfall [
+      # Cleanup
+      @gitStep( absworkdir, "checkout -- ." ) ,
+      @gitStep( absworkdir, "clean -f" ) ,
+      
       # Pull latest changes
       @gitStep( absworkdir, "pull" ) ,
       
@@ -163,22 +167,23 @@ class I18nWatcher
 
         # Call maven to extract i18n keys
         command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
+        console.log command
         exec command,
           timeout: 10*60*1000 # 10 minutes
           maxBuffer: 1*1024*1024 # 1 MB
         ,( error, stdout, stderr ) ->
           # TODO Handle failure because of compile fail or other. Check error.code
-          console.log command
-          console.log stdout unless error
-          console.log "Error #{error} : stderr: #{stderr}" if error
+          if error
+            error = error + stderr + stdout
+          else
+            console.log stdout
           callback error, latesthash
       ,
-      ( latesthash, callback ) ->
+      ( latesthash, callback ) =>
         @getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
           callback err, latesthash, untranslatedKeys
           
     ], ( err, latesthash, untranslatedKeys ) =>
-      console.log err
       delete @workdirlocks[info.workdir]
       if err
         callback err

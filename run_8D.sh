@@ -4,6 +4,8 @@ export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
 #export HUBOT_LOG_LEVEL=debug
 
+export JAVA_HOME=/usr/local/jvm/latest7
+
 export FILE_BRAIN_PATH=/data/cloud/jobot
 export HUDSON_TEST_MANAGER_URL='https://hudson.priv.8d.com:8443'
 

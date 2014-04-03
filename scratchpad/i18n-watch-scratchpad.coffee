@@ -21,9 +21,13 @@ storage = {}
 robot =
   respond: () ->
   brain:
-    get: () ->
+    get: ( key ) ->
       return storage
-
+    set: ( key, newstorage ) ->
+      storage = newstorage
+    save: () ->
+      console.log "brain saved: #{storage}"
+      
 i18n = new I18nWatcher( robot, true )
 
 #i18n.cloneRepo info, ( err, hash ) ->
@@ -36,6 +40,6 @@ i18n.processProject info, ( err, info ) ->
   if err
     console.log "Failed: #{err}"
   else
-    console.log "Info: #{info}"
+    console.log "Info: #{info.untranslatedKeys}"
 
 # jobot Watch translations on git repo ssh://git@git.priv.8d.com:58676/ftk branch feature/bike/fix-subscription-startdate and broadcast to room deploy@conference.manuel-darveaus-imac.local
