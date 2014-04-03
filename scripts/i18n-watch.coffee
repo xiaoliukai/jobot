@@ -146,7 +146,7 @@ class I18nWatcher
       @gitStep( absworkdir, "pull" ) ,
       
       # Check for new commites
-      @gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\", \\"author\\":\\"%an\\", \\"date\\":\\"%ar\\"},\" #{info.lastknowncommit}..' ),
+      @gitStep( absworkdir, "log --pretty=format:\"{\\\"hash\\\":\\\"%H\\\", \\\"author\\\":\\\"%an\\\", \\\"date\\\":\\\"%ar\\\"},\" #{info.lastknowncommit}.." ),
       
       # Parse output
       ( result, callback ) =>
@@ -202,12 +202,12 @@ class I18nWatcher
       
       # Parse output
       ( result, callback ) ->
-        gitlog = JSON.parse "#{result}"
+        gitlog = JSON.parse result
         info.lastknowncommit = gitlog.hash
         callback null, info.lastknowncommit
 
-    ], ( err ) ->
-      callback err
+    ], ( err, lastknowncommit ) ->
+      callback err, lastknowncommit
           
   getUntranslatedKeyInProject: ( project, callback ) ->
     fs.readFile path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
