@@ -8,6 +8,7 @@ export JAVA_HOME=/usr/local/jvm/latest7
 
 export FILE_BRAIN_PATH=/data/cloud/jobot
 export HUDSON_TEST_MANAGER_URL='https://hudson.priv.8d.com:8443'
+export I18N_WATCH_WORKDIR='/data/cloud/jobot/i18nwatch'
 
 # Set path to adapter since we are using npm link for hubot dependency. See Readme
 export HUBOT_ADAPTER_PATH=`pwd`/node_modules/

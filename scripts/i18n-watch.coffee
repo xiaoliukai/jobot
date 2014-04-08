@@ -6,7 +6,7 @@
 #   none  
 #  
 # Configuration: 
-#   TODO  
+#   process.env.I18N_WATCH_WORKDIR: The working directory for git clone
 #  
 # Commands:
 #   hubot Watch translations on git repo {git url} branch {branch name} and broadcast to room {full room name}
@@ -19,7 +19,7 @@ fs = require 'fs'
 path = require 'path'
 async = require 'async'
 xpath = require 'xpath'
-dom = require( 'xmldom' ).DOMParser
+DOMParser = require( 'xmldom' ).DOMParser
 exec = require( 'child_process' ).exec
 require( "natural-compare-lite" )
 
@@ -28,18 +28,22 @@ class I18nWatcher
   constructor: ( @robot, skipStart ) ->
     @state = {}
     @workdirlocks = {}
+
+    unless process.env.I18N_WATCH_WORKDIR
+      @robot.logger.error 'I18N_WATCH_WORKDIR_URL not set'
+      process.exit( 1 )
     
-    @rootworkdir = '/tmp/i18n'
+    @rootworkdir = process.env.I18N_WATCH_WORKDIR
     fs.mkdirSync @rootworkdir unless fs.existsSync @rootworkdir
-    
+
     setInterval( @.loop, 1 * 60 * 1000 ) unless skipStart
-    
+
     # Tell Hubot to broadcast extract results to the specified room.
     robot.respond /Watch translations on git repo (\S*) branch (\S*) and broadcast to room (\S*)/i, ( msg ) =>
       repoURL = msg.match[1]
       branch = msg.match[2]
       room = msg.match[3]
-    
+
       unless repoURL
         msg.reply( "You must specify a repo url" )
         return
@@ -47,11 +51,10 @@ class I18nWatcher
       unless branch
         msg.reply( "You must specify a branch" )
         return
-        
+
       @watchProject repoURL, branch, room, ( message )->
         msg.send message
-
-      
+    
   loop: () =>
     # Check for new commits
     @checkForChanges()
@@ -62,10 +65,10 @@ class I18nWatcher
       branch: branch
       workdir: Math.random().toString( 36 ).substring( 10 )
       room: room
-    
+
     try
       replyHandler( "Cloning..." )
-      @cloneRepo info, ( err )->
+      @cloneRepo info, ( err ) =>
         if err
           replyHandler( "Clone failed: #{err}" )
         else
@@ -82,15 +85,19 @@ class I18nWatcher
       absworkdir = path.join @rootworkdir, info.workdir
       if fs.existsSync absworkdir
         console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
-        @processProject info, (err, info)->
-          message = "Untranslated keys for #{info.giturl}/#{info.branch}:"
-          for key in info.untranslatedKeys
-            message = "  - #{key}"
-          @sendGroupChatMesssage info.room, message
+        @processProject info, ( err, info ) =>
+          if err
+            @sendGroupChatMesssage info.room, "Error checking for i18n: #{err}"
+          else 
+            message = "Untranslated keys for #{info.giturl}/#{info.branch}:\n"
+            for key in info.untranslatedKeys
+              message += "  - #{key}\n"
+            @sendGroupChatMesssage info.room, message
       else
+        # TODO @mdarveau Remove from brain
         console.log "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
         @sendGroupChatMesssage info.room, "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
-          
+
   # Storage
   persist: ( callback ) ->
     storage = @robot.brain.get 'I18nWatcher'
@@ -99,16 +106,16 @@ class I18nWatcher
     callback( storage )
     @robot.brain.set 'I18nWatcher', storage
     @robot.brain.save()
-    
+
   readstorage: () ->
     storage = @robot.brain.get 'I18nWatcher'
     storage?={}
     storage.projects?= []
     return storage
 
-    
+
 #############################
-  
+
   gitCommand: ( absworkdir, action ) ->
     command = "git "
     command += "--work-tree=#{absworkdir} --git-dir=#{absworkdir}/.git " if absworkdir
@@ -133,78 +140,81 @@ class I18nWatcher
   #
   processProject: ( info, callback ) ->
     absworkdir = path.join @rootworkdir, info.workdir
-    
+
     if @workdirlocks[info.workdir]
       console.log "#{info.giturl} branch #{info.branch} is already in progress"
       return
-    
+
     @workdirlocks[info.workdir] = true
-          
+
     console.log "Checking for updates"
     async.waterfall [
       # Cleanup
       @gitStep( absworkdir, "checkout -- ." ) ,
       @gitStep( absworkdir, "clean -f" ) ,
-      
+
       # Pull latest changes
       @gitStep( absworkdir, "pull" ) ,
-      
+
       # Check for new commites
       @gitStep( absworkdir, "log --pretty=format:\"{\\\"hash\\\":\\\"%H\\\", \\\"author\\\":\\\"%an\\\", \\\"date\\\":\\\"%ar\\\"},\" #{info.lastknowncommit}.." ),
-      
+
       # Parse output
       ( result, callback ) =>
-        gitlog = JSON.parse "[#{result.slice(0, - 1)}]"
+        gitlog = JSON.parse "[#{result.slice( 0, -1 )}]"
         latesthash = gitlog[0]?.hash
-  
+
         # Check if there is a new commit. If not, return and it will abort the chain.
         if info.lastknowncommit == latesthash
           delete @workdirlocks[info.workdir]
-          console.log "No new commit for #{info.giturl} branch #{info.branch}. Last commit is #{info.lastknowncommit}"
+          console.log "No new commit for #{info.giturl} branch #{info.branch}. Last commit is '#{info.lastknowncommit}'"
           return
-        
-        console.log "New commit for #{info.giturl} branch #{info.branch}"
+
+        console.log "New commit for #{info.giturl} branch #{info.branch}. Last commit is '#{latesthash}', previous last known was '#{info.lastknowncommit}'"
 
         # Call maven to extract i18n keys
         command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
         console.log command
         exec command,
-          timeout: 10*60*1000 # 10 minutes
-          maxBuffer: 1*1024*1024 # 1 MB
-        ,( error, stdout, stderr ) ->
+          timeout: 10 * 60 * 1000 # 10 minutes
+          maxBuffer: 1 * 1024 * 1024 # 1 MB
+        , ( error, stdout, stderr ) ->
           # TODO Handle failure because of compile fail or other. Check error.code
           if error
             error = error + stderr + stdout
-          else
-            console.log stdout
+          #else
+          #  console.log stdout
           callback error, latesthash
-      ,
+    ,
       ( latesthash, callback ) =>
-        @getUntranslatedKeyInProject absworkdir, (err, untranslatedKeys) ->
+        @getUntranslatedKeyInProject absworkdir, ( err, untranslatedKeys ) ->
           callback err, latesthash, untranslatedKeys
-          
+
     ], ( err, latesthash, untranslatedKeys ) =>
-      delete @workdirlocks[info.workdir]
       if err
-        callback err
+        delete @workdirlocks[info.workdir]
+        callback err, info
       else
         # store info
-        @persist ( storage ) ->
-          info.lastknowncommit = latesthash
-          info.untranslatedKeys = untranslatedKeys
-        callback null, info
-  
-  
+        @persist ( storage ) =>
+          for storageinfo in storage.projects
+            if storageinfo.giturl == info.giturl and storageinfo.branch == info.branch
+              storageinfo.lastknowncommit = latesthash
+              storageinfo.untranslatedKeys = untranslatedKeys
+              delete @workdirlocks[info.workdir]
+              callback null, storageinfo
+              return
+
   cloneRepo: ( info, callback ) ->
     absworkdir = path.join @rootworkdir, info.workdir
     console.log "Cloning repo #{info.giturl} to #{absworkdir}"
     async.waterfall [
       # Pull latest changes
       @gitStep( null, "clone -b #{info.branch} #{info.giturl} #{absworkdir}" ) ,
-      
+
       # Check for new commites
       @gitStep( absworkdir, 'log --pretty=format:\"{\\"hash\\":\\"%H\\"}\" -n1' ),
-      
+
       # Parse output
       ( result, callback ) ->
         gitlog = JSON.parse result
@@ -213,13 +223,13 @@ class I18nWatcher
 
     ], ( err, lastknowncommit ) ->
       callback err, lastknowncommit
-          
+
   getUntranslatedKeyInProject: ( project, callback ) ->
     fs.readFile path.resolve( project, 'ftk-i18n/src/main/xliff/SolsticeConsoleStrings_en.xlf' ), ( err, data ) ->
       if err
         callback ( err )
         return
-      dom = new dom().parseFromString( data.toString() )
+      dom = new DOMParser().parseFromString( data.toString() )
       nodes = xpath.select( "//trans-unit[target='']/@id", dom )
       untranslatedKeys = []
       for id in nodes

@@ -18,6 +18,7 @@ exec 'hostname', (error, stdout, stderr) ->
   process.env.HUBOT_XMPP_HOST="localhost"
   process.env.HUBOT_XMPP_PORT="5222"
   process.env.HUDSON_TEST_MANAGER_URL='https://hudson.priv.8d.com:8443'
+  process.env.I18N_WATCH_WORKDIR='/tmp/i18n'
   ##################
   
   require './run_hubot'
