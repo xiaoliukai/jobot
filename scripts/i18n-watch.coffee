@@ -200,6 +200,7 @@ class I18nWatcher
         @persist ( storage ) =>
           for storageinfo in storage.projects
             if storageinfo.giturl == info.giturl and storageinfo.branch == info.branch
+              console.log "Storing latest hash '#{latesthash}' for #{info.giturl} branch #{info.branch}"
               storageinfo.lastknowncommit = latesthash
               storageinfo.untranslatedKeys = untranslatedKeys
               delete @workdirlocks[info.workdir]
