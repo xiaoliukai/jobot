@@ -166,7 +166,7 @@ class I18nWatcher
         latesthash = gitlog[0]?.hash
 
         # Check if there is a new commit. If not, return and it will abort the chain.
-        if info.lastknowncommit == latesthash
+        unless latesthash
           delete @workdirlocks[info.workdir]
           console.log "No new commit for #{info.giturl} branch #{info.branch}. Last commit is '#{info.lastknowncommit}'"
           return
