@@ -173,7 +173,7 @@ class HudsonTestManager
         user = brainuser.privateChatJID
     
     unless user
-      msg.reply( "Sorry, I don't know user '#{user}'" )
+      msg.reply( "Sorry, I don't know user '#{msg.match[3]}'. Please use the username as shown in this group chat." )
       return
 
     try
