@@ -88,7 +88,8 @@ class I18nWatcher
         @processProject info, ( err, info ) =>
           if err
             @sendGroupChatMesssage info.room, "Error checking for i18n: #{err}"
-          else 
+          else
+            return if info.untranslatedKeys.length == 0
             message = "Untranslated keys for #{info.giturl}/#{info.branch}:\n"
             for key in info.untranslatedKeys
               message += "  - #{key}\n"
