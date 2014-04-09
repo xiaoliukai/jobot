@@ -151,7 +151,7 @@ class I18nWatcher
     console.log "Checking for updates"
     async.waterfall [
       # Cleanup
-      @gitStep( absworkdir, "checkout -- ." ) ,
+      @gitStep( absworkdir, "reset --hard" ) ,
       @gitStep( absworkdir, "clean -f" ) ,
 
       # Pull latest changes
