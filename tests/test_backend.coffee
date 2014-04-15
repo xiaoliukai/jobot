@@ -71,6 +71,7 @@ assert.strictEqual Object.keys( currentFailedTest ).length, 2
 assert.strictEqual Object.keys( fixedTests ).length, 0
 assert.strictEqual Object.keys( newFailedTest ).length, 2
 assert.strictEqual Object.keys( currentFailedTest ).length, 4
+assert.strictEqual Object.keys( currentFailedTest['mybuild.test1'].builds ).length, 2
 
 # No changes
 [fixedTests, newFailedTest, currentFailedTest]=@backend.persistFailedTests "myproject", "mybuild", toHudsonTests( [ 'mybuild.test1', 'mybuild.test2' ] )

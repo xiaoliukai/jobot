@@ -99,7 +99,7 @@ class HudsonTestManagerBackendSingleton
         when 'UNSTABLE'
           @parseTestRunOfProject projectname, buildname
         when 'SUCCESS'
-        # Call @persistFailedTests without failed tests
+          # Call @persistFailedTests without failed tests
           [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, {}
           @emit 'testresult', projectname, buildname, fixedTests, newFailedTest, currentFailedTest
         when 'FAILURE'
@@ -207,12 +207,12 @@ class HudsonTestManagerBackendSingleton
         # Copy current assignment if any
         for test, detail of failedtests
           if previousFailedTest?[test]
-            #console.log "#{test} failed previously"
+            console.log "#{test} failed on build ${build} but failed previously"
             # Was already failling
             currentFailedTest[test] = previousFailedTest?[test]
             delete previousFailedTest?[test]
           else
-            #console.log "#{test} new fail"
+            console.log "#{test} failed on build ${build} and is initial failure"
             # New failed test
             currentFailedTest[test] =
               name: detail.name
