@@ -97,7 +97,7 @@ class HudsonTestManagerBackendSingleton
       console.log "Status of #{projectname}/#{buildname} is #{buildresult.result}"
       switch buildresult.result
         when 'UNSTABLE'
-          @parseTestRunOfProject projectname, buildname
+          @parseTestRunOfProject projectname, buildname, buildresult.number
         when 'SUCCESS'
           # Call @persistFailedTests without failed tests
           [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, {}
@@ -118,9 +118,9 @@ class HudsonTestManagerBackendSingleton
     #
     # Parse test results
     #
-    parseTestRunOfProject: ( projectname, buildname ) ->
+    parseTestRunOfProject: ( projectname, buildname, buildnumber ) ->
       console.log "Parsing test report for #{projectname}/#{buildname}"
-      @hudson.getTestReport buildname, @robot.http, ( err, data ) =>
+      @hudson.getTestReport buildname, buildnumber, @robot.http, ( err, data ) =>
         if err
           @emit 'err', @hudson.errorToString err
         else
