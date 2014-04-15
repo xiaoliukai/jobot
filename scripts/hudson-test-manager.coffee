@@ -34,7 +34,7 @@
 #   Manuel Darveau 
 #
 moment = require 'moment'
-
+Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
 HudsonConnection = require( './hudson-test-manager/hudson_connection' )
 routes = require( './hudson-test-manager/routes' )
@@ -106,7 +106,7 @@ class HudsonTestManager
     # Display failed test and assignee
     robot.respond routes.SHOW_TEST_REPORT_FOR_PROJECT_$, ( msg ) =>
       @handleShowTestReportForProject msg
-      
+
     # Display unassigned tests
     robot.respond routes.SHOW_UNASSIGNED_TEST_FOR_PROJECT_$, ( msg ) =>
       @handleShowUnassignedTests msg
@@ -171,7 +171,7 @@ class HudsonTestManager
       brainuser = @robot.brain.userForId user
       if brainuser
         user = brainuser.privateChatJID
-    
+
     unless user
       msg.reply( "Sorry, I don't know user '#{msg.match[3]}'. Please use the username as shown in this group chat." )
       return
@@ -243,8 +243,8 @@ class HudsonTestManager
       if msg.envelope.user.room == projectRoomName
         @storeAnnouncement projectRoomName, projectname, announcement
       else
-        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"    
-        
+        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
+
   #
   # Return tests assigned to requesting user
   #
@@ -265,7 +265,7 @@ class HudsonTestManager
           report += "  #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()} (#{testdetail.url})\n"
 
     msg.send report
-        
+
   #
   # Build a test report.
   # Return [String: test report, announcement{1: testname, 2: testname, ...}]
@@ -274,20 +274,24 @@ class HudsonTestManager
     if Object.keys( failedTests ).length == 0
       return [ "No test fail", {} ]
 
-    status = "Test report for #{project}\n"
+    message = new Xmpp.Element( 'message', {} )
+    body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+
+    body.t( "Test report for #{project}\n" ).c( 'br' )
     testno = 0
     announcement = {}
 
     for detail in sort_util.getValuesSortedBy( unassignedTests, 'name' )
-      status += "    #{++testno} - #{detail.name} is unassigned since #{moment( detail.since ).fromNow()} (#{detail.url})\n"
+      body.t( "  #{++testno} - " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( ' is ' ).c( 'b' ).t( 'unassigned' ).up().t( " since #{moment( detail.since ).fromNow()}" ).c( 'br' )
       announcement[testno] = detail.name
-      
+
     if includeAssignedTests
       for detail in sort_util.getValuesSortedBy( assignedTests, 'name' )
         # TODO detail.assigned is the full JID. It would be nice to keep the full JID but report on the simple name
-        status += "    #{++testno} - assigned to #{detail.assigned.split( '@' )[0]} since #{moment( detail.assignedDate ).fromNow()}: #{detail.name} (#{detail.url})\n"
+        body.t( "  #{++testno} - " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t(" assigned to #{detail.assigned.split( '@' )[0]} since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
+
         announcement[testno] = detail.name
-    return [ status, announcement ]
+    return [ message, announcement ]
 
   #
   # Process new test result
@@ -301,31 +305,31 @@ class HudsonTestManager
     roomname = @backend.getBroadcastRoomForProject projectname
     return unless roomname
 
-    status = "Test report for #{projectname}\n"
+    message = new Xmpp.Element( 'message', {} )
+    body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+
+    body.t( "Test report for #{projectname}" ).c( 'br' )
     if Object.keys( fixedTests ).length != 0
-      status += "  Fixed test(s):\n"
-      for detail in sort_util.getValuesSortedBy( fixedTests, 'name' ) 
-        status += "    #{detail.name}:"
+      body.t( "  Fixed test(s):" ).c( 'br' )
+      for detail in sort_util.getValuesSortedBy( fixedTests, 'name' )
+        body.t( '    ' ).c( 'a', {href: detail.url} ).t( detail.name ).up()
         if detail.assigned
-          status += " Was assigned to #{detail.assigned}."
+          body.t( " was assigned to #{detail.assigned}." )
         else
-          status += " Was not assigned."
-        status += " Resolution time: #{moment( detail.since ).from( moment(), true )}.\n"
+          body.c( 'b' ).t( " was not assigned." )
+        body.t( " Resolution time: #{moment( detail.since ).from( moment(), true )}." ).c( 'br' )
 
     if Object.keys( newFailedTest ).length != 0
       testno = 0
       announcement = {}
-      status += "  New failure(s):\n"
+      body.t( "  New failure(s):" ).c( 'br' )
       for detail in sort_util.getValuesSortedBy( newFailedTest, 'name' )
-        status += "    #{++testno} - #{detail.name} (#{detail.url})\n"
+        body.t( "    #{++testno} - " ).c( 'a', {href: detail.url} ).t( detail.name ).up().c( 'br' )
         announcement[testno] = detail.name
       @storeAnnouncement roomname, projectname, announcement
 
-    # Trim the last \n
-    status = status.trim()
-
     # Send report to the room
-    @sendGroupChatMesssage roomname, status
+    @sendGroupChatMesssage roomname, message
 
   # Return the last announcement for a given room name
   # return object:
