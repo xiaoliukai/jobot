@@ -15,6 +15,6 @@ export HUBOT_XMPP_PASSWORD=hubot
 export HUBOT_XMPP_ROOMS=deploy@conference.${HOSTNAME}
 export HUBOT_XMPP_HOST=localhost
 export HUBOT_XMPP_PORT=5222
+export I18N_WATCH_WORKDIR=.hubot/
 
 ./bin/hubot -n jobot -a xmpp
-
