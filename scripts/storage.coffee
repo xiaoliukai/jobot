@@ -38,9 +38,3 @@ module.exports = (robot) ->
       response += "\n"
 
     msg.send response
-
-  robot.respond /SAVE (.*)$/i, (msg) ->
-	  fs = require "fs"
-	  dir = "."
-	  fs.writeFile "#{dir}/msg", msg.match[1]
-	  msg.send "Will remind of : " + msg.match[1]
