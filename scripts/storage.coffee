@@ -14,10 +14,6 @@ module.exports = (robot) ->
     console.log output
     msg.send output
   
-  robot.respond /hello$/i, (msg) ->
-    output = "World"
-    msg.send output 	
-
   robot.respond /time$/i, (msg) -> 
     output = "Server time is : " + new Date
     msg.send output
