@@ -10,7 +10,16 @@ Util = require "util"
 
 module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
-    output = JSON.stringify robot.brain.data, 2
+    output = JSON.stringify robot.brain.data, null, 4
+    console.log output
+    msg.send output
+  
+  robot.respond /hello$/i, (msg) ->
+    output = "World"
+    msg.send output 	
+
+  robot.respond /time$/i, (msg) -> 
+    output = "Server time is : " + new Date
     msg.send output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->
@@ -34,3 +43,8 @@ module.exports = (robot) ->
 
     msg.send response
 
+  robot.respond /SAVE (.*)$/i, (msg) ->
+	  fs = require "fs"
+	  dir = "."
+	  fs.writeFile "#{dir}/msg", msg.match[1]
+	  msg.send "Will remind of : " + msg.match[1]
