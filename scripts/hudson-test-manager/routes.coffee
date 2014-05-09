@@ -1,6 +1,3 @@
-
-
-
 class HudsonTestManagerRoutes
 
   # Constants for "routes"
