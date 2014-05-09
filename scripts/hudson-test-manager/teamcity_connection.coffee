@@ -14,9 +14,12 @@ class TeamcityConnection
   #
 
   authRequest: ( http, url ) ->
+    fs = require 'fs'
+    path = require 'path'
+    login = JSON.parse fs.readFileSync   path.resolve ".", "auth.json"
     #req = http( url, {rejectUnauthorized: false} )
     req = http( url )
-    req.auth( 'jobot', 'jobot' )
+    req.auth( login.teamcity.user, login.teamcity.password )
     req.header( 'Accept', 'application/json' )
     return req
 

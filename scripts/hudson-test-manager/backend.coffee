@@ -3,7 +3,7 @@ moment = require 'moment'
 
 util = require 'util'
 
-HudsonConnection = require './hudson_connection'
+HudsonConnection = if process.env.HUDSON then require './hudson_connection' else require './teamcity_connection'
 
 # Datastructure in brain:
 # HudsonTestManagerBackend

@@ -16,7 +16,11 @@ class HudsonConnection
   authRequest: ( http, url ) ->
     #req = http( url, {rejectUnauthorized: false} )
     req = http( url )
-    req.auth( 'jobot', 'jobot' )
+	# the password and the user for the service is now stored in a file called auth.json in the root directory
+    fs = require 'fs'
+    path = require 'path'
+    login = JSON.parse fs .readFileSync   path.resolve ".", "auth.json"
+    req.auth( login.hudson.user, login.hudson.password )
     return req
 
   getJson: ( req, jsonCallback, builder ) ->
