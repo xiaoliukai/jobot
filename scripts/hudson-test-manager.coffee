@@ -84,7 +84,7 @@ class HudsonTestManager
       @handleWatchFailedTests msg
 
     # Stop monitoring tests for the specified build which is part of specified project.
-    robot.respond routes.STOP_ING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
+    robot.respond routes.STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
       @handleStopWatchingTests msg
 
     # Set the project's manager
