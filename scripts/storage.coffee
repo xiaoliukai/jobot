@@ -20,13 +20,13 @@ module.exports = (robot) ->
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->
     backup = robot.brain.data
-    console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, 2}"
+    console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, null, 4}"
     robot.brain.data = JSON.parse( msg.match[1] )
     robot.brain.save()
-    msg.send "Done, previous brain was #{JSON.stringify backup, 2}"
+    msg.send "Done, previous brain was #{JSON.stringify backup, null, 4}"
    
    robot.respond /ls$/i, (msg)->
-       output = JSON.stringify robot.brain.data, 2
+       output = JSON.stringify robot.brain.data,null, 2
        msg.send output
    
   robot.respond /show users$/i, (msg) ->
