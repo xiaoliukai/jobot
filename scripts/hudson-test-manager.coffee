@@ -6,7 +6,7 @@
 #   none  
 #  
 # Configuration: 
-#   process.env.HUDSON_TEST_MANAGER_URL: The hudson URL 
+#   process.env.HUDSON_TEST_MANAGER_URL: The hudson URL
 #   TODO process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 
@@ -36,7 +36,7 @@
 moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
-HudsonConnection = require( './hudson-test-manager/hudson_connection' )
+HudsonConnection =  if process.env.HUDSON then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
 routes = require( './hudson-test-manager/routes' )
 test_manager_util = require( './hudson-test-manager/test_string_parser' )
 
@@ -84,7 +84,7 @@ class HudsonTestManager
       @handleWatchFailedTests msg
 
     # Stop monitoring tests for the specified build which is part of specified project.
-    robot.respond routes.STOP_WATCHING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
+    robot.respond routes.STOP_ING_FAILED_TESTS_OF_BUILD_$_FOR_PROJECT_$, ( msg ) =>
       @handleStopWatchingTests msg
 
     # Set the project's manager
