@@ -159,7 +159,8 @@ class HudsonTestManager
     testsString = msg.match[1]
     project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}" )?.projectname
     user = msg.match[3]
-
+    #if the user is up to two words add the second word to the user's id
+    user +=" " +  msg.match[4] if msg.match[4]?
     unless project
       msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )
       return
