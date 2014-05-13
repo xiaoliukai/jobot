@@ -36,22 +36,23 @@
 moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
-HudsonConnection =  if process.env.HUDSON then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
+HudsonConnection =  if process.env.HUDSON=='true' then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
+console.log HudsonConnection.hudson_url
 routes = require( './hudson-test-manager/routes' )
 test_manager_util = require( './hudson-test-manager/test_string_parser' )
 
 class HudsonTestManager
 
   constructor: ( @robot, @backend ) ->
-    unless process.env.HUDSON_TEST_MANAGER_URL
-      @robot.logger.error 'HUDSON_TEST_MANAGER_URL not set'
+    unless process.env.HUDSON_TEST_MANAGER_URL and process.env.TEAMCITY_TEST_MANAGER_URL
+      @robot.logger.error 'HUDSON_TEST_MANAGER_URL or TEAMCITY_TEST_MANAGER_URL not set'
       process.exit( 1 )
 
     # See storeAnnouncement
     @state = {}
 
-    @hudson = new HudsonConnection( process.env.HUDSON_TEST_MANAGER_URL )
-
+    @hudson = new HudsonConnection( if process.env.HUDSON=='true' then process.env.HUDSON_TEST_MANAGER_URL else process.env.TEAMCITY_TEST_MANAGER_URL )
+    console.log @hudson, process.env.HUDSON
     @backend = require( './hudson-test-manager/backend' )( @robot, @hudson ) unless @backend
 
     # Setup "routes":
@@ -68,10 +69,9 @@ class HudsonTestManager
   # Setup "jabber" routes
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
-    robot.respond /check builds/i, ( msg ) =>
+    robot.respond /check builds?/i, ( msg ) =>
       @backend.checkForNewTestRun()
-
-    # Tell Hubot to broadcast test results to the specified room.
+        # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
 
@@ -158,7 +158,7 @@ class HudsonTestManager
   handleAssignTest: ( msg ) ->
     testsString = msg.match[1]
     project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}" )?.projectname
-    user = msg.match[3]
+    user = msg.match[3].trim()
     console.log user
     unless project
       msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )

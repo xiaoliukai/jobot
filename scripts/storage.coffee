@@ -4,6 +4,7 @@
 # Commands:
 #   hubot show users - Display all users that hubot knows about
 #   hubot show storage - Display the contents that are persisted in the brain
+#   hubot time - display the server time for hubot
 
 
 Util = require "util"
@@ -33,7 +34,8 @@ module.exports = (robot) ->
     response = ""
 
     for own key, user of robot.brain.data.users
-      response += "#{user.id} #{user.name}"
+      response += "id :#{user.id}, name :#{user.name}"
       response += " <#{user.email_address}>" if user.email_address
       response += "\n"
     msg.send response
+    

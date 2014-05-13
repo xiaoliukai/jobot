@@ -3,7 +3,8 @@ moment = require 'moment'
 
 util = require 'util'
 
-HudsonConnection = if process.env.HUDSON then require './hudson_connection' else require './teamcity_connection'
+HudsonConnection = if process.env.HUDSON is 'true' then require './hudson_connection' else require './teamcity_connection'
+#if HUDSON is undefined, Teamcity will be used by default.
 
 # Datastructure in brain:
 # HudsonTestManagerBackend

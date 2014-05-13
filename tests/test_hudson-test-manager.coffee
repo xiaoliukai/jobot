@@ -2,6 +2,8 @@ assert = require 'assert'
 moment  = require 'moment'
 
 process.env.HUDSON_TEST_MANAGER_URL = 'http://www.test.com'
+process.env.TEAMCITY_TEST_MANAGER_URL = 'http://www.test.com'
+process.env.HUDSON='true'
 
 setup = () ->
   robot = 
@@ -121,10 +123,10 @@ manager.storeAnnouncement = ( roomname, projectname, announcement ) ->
   
 manager.sendGroupChatMesssage = ( roomname, status ) ->
   assert.equal "roomA", roomname
+  console.log Object.keys(status)
   assert.equal status.split('\n').length, 5
   
 manager.processNewTestResult "projectA", "buildA", fixedTests, newFailedTest
-  
 #
 # handleAssignTest
 #
