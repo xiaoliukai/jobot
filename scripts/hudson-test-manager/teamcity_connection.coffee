@@ -75,7 +75,7 @@ class TeamcityConnection
   # .url: http://...
   # .culprits: [{fullName:}]
   getBuildStatus: ( jobName, http, jsonCallback ) ->
-    # TODO Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
+    # FIXED see ForProject Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
     #console.log JSON.stringify req, null , 4 
     builder = ( res ) ->
@@ -94,7 +94,7 @@ class TeamcityConnection
     return
 
   getBuildStatusForProject: (projectName, jobName, http, jsonCallback ) ->
-    # TODO Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
+    # FIXED Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},project:#{projectName},running:false,count:1" )
     #console.log JSON.stringify req, null , 4 
     builder = ( res ) ->

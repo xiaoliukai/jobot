@@ -72,7 +72,43 @@ class HudsonTestManagerBackendSingleton
       @checkForNewTestRun()
 
     # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+
+
+
+    notifyUnassignedTest: () ->
+        console.log "Method test"
+        unassignedtest = @getUnassignedTest()
+        console.log unassignedtest
+        now = moment()
+        for project in unassignedtest
+            if now.diff project.failedtests.since, 'minutes' > process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
+                console.log project.failedtest.name
+
+
+    getUnassignedTest: () ->
+      console.log "Looking for unassigned test.. test un deux test ..."
+      unassignedtest = {}
+      storage = @readstorage();
+      #console.log storage.projects
+      for projectname, project of storage.projects
+         # console.log project.failedtests
+        #if project.failedtests isnt {}
+          for testname, detail of project.failedtests
+          #  console.log JSON.stringify project.failedtests, null, 4 + " ***********"
+            if detail.assign is undefined
+              unassignedtest[projectname]?={}
+              unassignedtest[projectname].failedtests?={}
+              unassignedtest[projectname].failedtests[testname]=
+                  name: detail.name
+                  since: detail.since
+                console.log JSON.stringify detail,null,4        
+      console.log JSON.stringify unassignedtest, null, 4
+      return unassignedtest
+                    
+        
     # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
+
+
 
     checkForNewTestRun: () ->
       console.log "Checking builds..."
