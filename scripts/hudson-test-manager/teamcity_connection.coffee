@@ -16,12 +16,18 @@ class TeamcityConnection
   authRequest: ( http, url ) ->
     fs = require 'fs'
     path = require 'path'
-    login = JSON.parse fs.readFileSync path.resolve ".", "auth.json"
+    try
+        
+        login = JSON.parse fs.readFileSync path.resolve ".", "auth.json"
     #req = http( url, {rejectUnauthorized: false} )
-    req = http( url )
-    req.auth( login.teamcity.user, login.teamcity.password)
-    req.header( 'Accept', 'application/json' )
+        req = http( url )
+        req.auth( login.teamcity.user, login.teamcity.password)
+        req.header( 'Accept', 'application/json' )
     #console.log JSON.stringify req, null, 4
+    catch err
+        console.log "There was an error : #{err}"
+        process.exit(1)
+    
     return req
 
   getJson: ( req, jsonCallback, builder ) ->
