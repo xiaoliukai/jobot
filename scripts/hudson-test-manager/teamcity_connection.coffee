@@ -71,9 +71,9 @@ class TeamcityConnection
   getBuildStatus: ( jobName, http, jsonCallback ) ->
     # TODO Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
-    console.log JSON.stringify req, null , 4 
+    #console.log JSON.stringify req, null , 4 
     builder = ( res ) ->
-      console.log "res :\n " + JSON.stringify res,null, 4
+     # console.log "res :\n " + JSON.stringify res,null, 4
       result = {}
       result.jobName = jobName
       result.number = res.build[0].id
@@ -90,12 +90,12 @@ class TeamcityConnection
   getBuildStatusForProject: (projectName, jobName, http, jsonCallback ) ->
     # TODO Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},project:#{projectName},running:false,count:1" )
-    console.log JSON.stringify req, null , 4 
+    #console.log JSON.stringify req, null , 4 
     builder = ( res ) ->
-      console.log "res :\n " + JSON.stringify res,null, 4
+     # console.log "res :\n " + JSON.stringify res,null, 4
       result = {}
       result.jobName = jobName
-	  result.projectName = projectName
+      result.projectName = projectName
       result.number = res.build[0].id
       # Convert to a common enum
       result.result = 'SUCCESS' if res.build[0].status == 'SUCCESS'
@@ -117,7 +117,8 @@ class TeamcityConnection
 
   getTestReport: ( jobName, buildnumber, http, jsonCallback ) ->
     teamcity_url = @teamcity_url
-    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/testOccurrences?locator=build:#{buildnumber},count:9999" )
+    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/testOccurrences?locator=build:#{buildnumber},count:9999,status:FAILURE" )
+    #console.log "HELLO WORLD"
     builder = ( res ) ->
       result = {}
       result.jobName = jobName
@@ -125,12 +126,14 @@ class TeamcityConnection
       # Get failed tests
       result.failedTests = {}
       for testcase in res.testOccurrence
+          console.log JSON.stringify res, null, 4
         if testcase.status == 'FAILURE'
-          className = testcase.className.substring( 0, testcase.className.lastIndexOf( '.' ) )
+          className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
             name: className
             url: "#{teamcity_url}/viewLog.html?buildId=#{buildnumber}&tab=buildResultsDiv"
-
+        
+        console.log "Failed test : " + result.failedTests
             
             
       return result

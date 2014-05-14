@@ -37,7 +37,7 @@ moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
 HudsonConnection =  if process.env.HUDSON=='true' then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
-console.log HudsonConnection.hudson_url
+#console.log HudsonConnection.hudson_url
 routes = require( './hudson-test-manager/routes' )
 test_manager_util = require( './hudson-test-manager/test_string_parser' )
 

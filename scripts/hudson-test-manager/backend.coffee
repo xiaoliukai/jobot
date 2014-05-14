@@ -77,6 +77,7 @@ class HudsonTestManagerBackendSingleton
     checkForNewTestRun: () ->
       console.log "Checking builds..."
       storage = @readstorage()
+      console.log storage
       for projectname of storage.projects
         do (projectname) =>
           console.log "  for project #{projectname}"
@@ -208,12 +209,12 @@ class HudsonTestManagerBackendSingleton
         # Copy current assignment if any
         for test, detail of failedtests
           if previousFailedTest?[test]
-            console.log "#{test} failed on build ${build} but failed previously"
+            console.log "#{test} failed on build #{build} but failed previously"
             # Was already failling
             currentFailedTest[test] = previousFailedTest?[test]
             delete previousFailedTest?[test]
           else
-            console.log "#{test} failed on build ${build} and is initial failure"
+            console.log "#{test} failed on build #{build} and is initial failure"
             # New failed test
             currentFailedTest[test] =
               name: detail.name
