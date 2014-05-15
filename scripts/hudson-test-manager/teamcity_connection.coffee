@@ -88,7 +88,7 @@ class TeamcityConnection
       result.result = 'UNSTABLE' if res.build[0].status == 'FAILURE'
       result.result = 'FAILURE' if res.build[0].status == 'ERROR'
       result.url = res.build[0].webUrl + '&tab=testsInfo'
-      console.log "Result : "+JSON.stringify result, null,'\t'
+      #console.log "Result : "+JSON.stringify result, null,'\t'
       return result
     @getJson req, jsonCallback, builder
     return
@@ -108,7 +108,7 @@ class TeamcityConnection
       result.result = 'UNSTABLE' if res.build[0].status == 'FAILURE'
       result.result = 'FAILURE' if res.build[0].status == 'ERROR'
       result.url = res.build[0].webUrl + '&tab=testsInfo'
-      console.log "Result : "+JSON.stringify result, null,'\t'
+      #console.log "Result : "+JSON.stringify result, null,'\t'
       return result
     @getJson req, jsonCallback, builder
     return
