@@ -1,5 +1,4 @@
 #!/bin/sh
-
 export PATH="node_modules/.bin:node_modules/hubot/node_modules/.bin:$PATH"
 
 #export HUBOT_LOG_LEVEL=debug
@@ -16,6 +15,8 @@ export I18N_WATCH_WORKDIR='/data/cloud/jobot/i18nwatch'
 # Set path to adapter since we are using npm link for hubot dependency. See Readme
 export HUBOT_ADAPTER_PATH=`pwd`/node_modules/
 
+#need  HUDSON set to true to use hudson_connection,  anything else for teamcity_connect
+#need TEAMCITY_TEST_MANAGER_URL=https://teamcity...
 # ${HUBOT_XMPP_PASSWORD:?"Need to set HUBOT_XMPP_PASSWORD: export HUBOT_XMPP_PASSWORD=..."}
 if [ -z "$HUBOT_XMPP_PASSWORD" ]; then
     read -p "Jabber password:" HUBOT_XMPP_PASSWORD
