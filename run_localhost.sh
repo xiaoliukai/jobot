@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#tri
 HOSTNAME=`hostname`
 
 export HUBOT_LOG_LEVEL=debug
