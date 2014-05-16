@@ -17,15 +17,13 @@ class TeamcityConnection
     fs = require 'fs'
     path = require 'path'
     try
-        
         login = JSON.parse fs.readFileSync path.resolve ".", "auth.json"
-    #req = http( url, {rejectUnauthorized: false} )
+        #req = http( url, {rejectUnauthorized: false} )
         req = http( url )
         req.auth( login.teamcity.user, login.teamcity.password)
         req.header( 'Accept', 'application/json' )
-    #console.log JSON.stringify req, null, 4
     catch err
-        console.log "There was an error : #{err}"
+        console.log "There was an error do not forget to create a file auth.json with the apropriate credentials : #{err}"
         process.exit(1)
     
     return req
@@ -77,9 +75,9 @@ class TeamcityConnection
   getBuildStatus: ( jobName, http, jsonCallback ) ->
     # FIXED see ForProject Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
-    #console.log JSON.stringify req, null , 4 
+    
     builder = ( res ) ->
-     # console.log "res :\n " + JSON.stringify res,null, 4
+    
       result = {}
       result.jobName = jobName
       result.number = res.build[0].id
@@ -108,7 +106,7 @@ class TeamcityConnection
       result.result = 'UNSTABLE' if res.build[0].status == 'FAILURE'
       result.result = 'FAILURE' if res.build[0].status == 'ERROR'
       result.url = res.build[0].webUrl + '&tab=testsInfo'
-      #console.log "Result : "+JSON.stringify result, null,'\t'
+    
       return result
     @getJson req, jsonCallback, builder
     return
@@ -132,7 +130,8 @@ class TeamcityConnection
       # Get failed tests
       result.failedTests = {}
       for testcase in res.testOccurrence
-          console.log JSON.stringify res, null, 4
+    #could still be useful for further debuging. 
+    #     console.log JSON.stringify res, null, 4
         if testcase.status == 'FAILURE'
           className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
@@ -146,8 +145,5 @@ class TeamcityConnection
     @getJson req, jsonCallback, builder
     return
     
-
-
-
 
 module.exports = TeamcityConnection

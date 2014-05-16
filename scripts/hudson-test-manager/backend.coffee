@@ -73,10 +73,6 @@ class HudsonTestManagerBackendSingleton
      # @notifyUnassignedTest()
     # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
 
-
-
-
-
 # checkForUnassignedTest:() ->
 #        unassignedtest={}
  #       for projectname of @readstorage().projects
@@ -93,13 +89,7 @@ class HudsonTestManagerBackendSingleton
           console.log project
           unassignedlist[project]=projectname if moment().diff(projectname.since, 'minutes') > process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
           console.log JSON.stringify unassignedlist, null, 2
-        #console.log JSON.stringify unassignedlist,null,4
-      #console.log "unassignedlist : " + JSON.stringify unassignedlist, null, 4 
-     # console.log 'test list : ' + JSON.stringify testlist, null, 4 
       return unassignedlist
-      #console.log JSON.stringify unassignedtest , null , 4
-      #return unassignedtest
-      #console.log JSON.stringify unassignedtest , null, 4
 
     checkForTestStillFail:() ->
           storage = @readstorage()

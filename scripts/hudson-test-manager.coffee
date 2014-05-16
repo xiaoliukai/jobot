@@ -37,7 +37,6 @@ moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
 HudsonConnection =  if process.env.HUDSON=='true' then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
-#console.log HudsonConnection.hudson_url
 routes = require( './hudson-test-manager/routes' )
 test_manager_util = require( './hudson-test-manager/test_string_parser' )
 
@@ -74,11 +73,10 @@ class HudsonTestManager
         # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
-      
+      #tell hubot to  call unassignedTest
     robot.respond /check unassigned tests? in (\S*)/i, ( msg ) =>
-        #console.log "Test!"
       @backend.unassignedTest(msg.match[1])
-    
+     #Hubot check the 
     robot.respond /list unassigned yet/i, ( msg ) =>
       @backend.checkForTestStillFail()
     # Tell Hubot to stop broadcast test results to the specified room.

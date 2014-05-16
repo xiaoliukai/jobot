@@ -1,7 +1,7 @@
 class HudsonTestManagerRoutes
 
   # Constants for "routes"
-  
+  #TODO add cases for notify
   @BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$ = /Broadcast failed tests for project (\S*) to room (\S*)/i
   @STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$ = /Stop broadcasting failed tests? for project (\S*) to room (\S*)/i
   @WATCH_FAILED_TESTS_FOR_PROJECT_$_USING_BUILD_$ = /Watch failed tests? for project (\S*) using build (\S*)/i
