@@ -7,7 +7,7 @@
 #  
 # Configuration: 
 #   process.env.HUDSON_TEST_MANAGER_URL: The hudson URL
-#   TODO process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
+#   TODO/FIX process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 
 #  
@@ -77,10 +77,10 @@ class HudsonTestManager
       
     robot.respond /check unassigned tests? in (\S*)/i, ( msg ) =>
         #console.log "Test!"
-      @backend.getUnassignedTest(msg.match[0])
+      @backend.unassignedTest(msg.match[1])
     
     robot.respond /list unassigned yet/i, ( msg ) =>
-        msg.send @backend.notifyUnassignedTest()
+      @backend.checkForTestStillFail()
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       @handleStopBroadcastingFailedTests msg

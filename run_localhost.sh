@@ -3,7 +3,7 @@
 HOSTNAME=`hostname`
 
 export HUBOT_LOG_LEVEL=debug
-coffee -c .
+coffee -cm .
 
 export HUDSON_TEST_MANAGER_URL="https://hudson.priv.8d.com:8443"
 export TEAMCITY_TEST_MANAGER_URL="https://teamcity.priv.8d.com:8443"
@@ -22,5 +22,5 @@ export HUBOT_XMPP_HOST=localhost
 export HUBOT_XMPP_PORT=5222
 export I18N_WATCH_WORKDIR=.hubot/
 export HUDSON="false"
-export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=30
+export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15
 ./bin/hubot -n jobot -a xmpp

@@ -72,12 +72,39 @@ class HudsonTestManagerBackendSingleton
       @checkForNewTestRun()
      # @notifyUnassignedTest()
     # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
-        
-    getUnassignedTest: (project) ->
-      console.log "Looking for unassigned  tests in #{project}..."
-      unassignedtest = @getFailedTests(project)[1]
-      console.log JSON.stringify unassignedtest , null, 4
 
+
+
+
+
+# checkForUnassignedTest:() ->
+#        unassignedtest={}
+ #       for projectname of @readstorage().projects
+  #          unassignedtest[projectname] = unassignedTest(projectname)
+   #         for detail.since of unassignedtest[projectname].faildtests
+            
+    
+    unassignedTest: (project,testlist) ->
+      console.log "Looking for unassigned  tests in #{project}..."
+     # unassignedtest = @getFailedTests(project)[1]
+      #console.log JSON.stringify unassignedtest, null, 4
+      unassignedlist = {}
+      for project, projectname of testlist
+          console.log project
+          unassignedlist[project]=projectname if moment().diff(projectname.since, 'minutes') > process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
+          console.log JSON.stringify unassignedlist, null, 2
+        #console.log JSON.stringify unassignedlist,null,4
+      #console.log "unassignedlist : " + JSON.stringify unassignedlist, null, 4 
+     # console.log 'test list : ' + JSON.stringify testlist, null, 4 
+      return unassignedlist
+      #console.log JSON.stringify unassignedtest , null , 4
+      #return unassignedtest
+      #console.log JSON.stringify unassignedtest , null, 4
+
+    checkForTestStillFail:() ->
+          storage = @readstorage()
+          for projectname of storage.projects
+            console.log "#{projectname} list of unassigned tests : " + JSON.stringify @unassignedTest(projectname, @getFailedTests(projectname)[0]), null, 4
 
     # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
