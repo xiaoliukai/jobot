@@ -7,7 +7,7 @@
 #  
 # Configuration: 
 #   process.env.HUDSON_TEST_MANAGER_URL: The hudson URL
-#   TODO/FIX process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
+#   FIX process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 
 #   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 
 #  
@@ -77,8 +77,8 @@ class HudsonTestManager
     robot.respond /check unassigned tests? in (\S*)/i, ( msg ) =>
       @backend.unassignedTest(msg.match[1])
      #Hubot check the 
-    robot.respond /list unassigned yet/i, ( msg ) =>
-      @backend.checkForTestStillFail()
+    robot.respond /unassigned yet/i, ( msg ) =>
+      @backend.checkForUnassignedTest()
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       @handleStopBroadcastingFailedTests msg
@@ -363,12 +363,10 @@ class HudsonTestManager
   # Notify which tests are not assigned
   # TODO Call after configure threshold *if* tests are still unassigned
   notifyUnassignedTest: ( projectname, to_jid ) =>
-    console.log "It will crash but : "+projectname
-    #console.log JSON.stringify @backend, null, 4
     roomname = @backend.getBroadcastRoomForProject projectname
-    return unless roomname
-
-    [report, announcement] = @buildTestReport( projectname, @backend.getFailedTests(projectname), false )
+    #return unless roomname
+    [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
+    [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
     @sendGroupChatMesssage roomname, report
 
