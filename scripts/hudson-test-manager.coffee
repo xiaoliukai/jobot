@@ -59,7 +59,7 @@ class HudsonTestManager
 
     # Listen in backend
     @backend.on 'testresult', @.processNewTestResult
-
+    @backend.on 'testunassigned', @.notifyUnassignedTest
     @backend.on 'err', ( err ) =>
       console.log "Error in backend: #{err}"
 
@@ -362,17 +362,21 @@ class HudsonTestManager
 
   # Notify which tests are not assigned
   # TODO Call after configure threshold *if* tests are still unassigned
-  notifyUnassignedTest: ( projectname, to_jid ) ->
+  notifyUnassignedTest: ( projectname, to_jid ) =>
+    console.log "It will crash but : "+projectname
+    #console.log JSON.stringify @backend, null, 4
     roomname = @backend.getBroadcastRoomForProject projectname
     return unless roomname
 
-    [report, announcement] = @buildTestReport( project, failedTests, unassignedTests, assignedTests, false )
+    [report, announcement] = @buildTestReport( projectname, @backend.getFailedTests(projectname), false )
     @storeAnnouncement roomname, projectname, announcement
     @sendGroupChatMesssage roomname, report
 
   # TODO Notify assignee of test fail past warning threshold
   # TODO Notify manager of test fail past escalade threshold
   notifyTestStillFail: ( projectname, to_jid ) ->
+   
+      
     # Failed tests for project {}:
     #- http://... is not assigned and fail since {failSinceDate}
     # or 

@@ -8,7 +8,7 @@
 
 
 Util = require "util"
-
+Moment = require 'moment'
 module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
     output = JSON.stringify robot.brain.data, null, 4
@@ -16,7 +16,7 @@ module.exports = (robot) ->
     msg.send output
   
   robot.respond /time$/i, (msg) -> 
-    output = "Server time is : " + new Date
+    output = "Server time is : " + Moment().format()
     msg.send output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->

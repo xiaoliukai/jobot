@@ -70,8 +70,10 @@ class HudsonTestManagerBackendSingleton
     loop: () =>
       # Check for new builds
       @checkForNewTestRun()
-     # @notifyUnassignedTest()
-    # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+     #
+     
+     
+     # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
 
 # checkForUnassignedTest:() ->
 #        unassignedtest={}
@@ -80,22 +82,39 @@ class HudsonTestManagerBackendSingleton
    #         for detail.since of unassignedtest[projectname].faildtests
             
     
-    unassignedTest: (project,testlist) ->
-      console.log "Looking for unassigned  tests in #{project}..."
-     # unassignedtest = @getFailedTests(project)[1]
-      #console.log JSON.stringify unassignedtest, null, 4
+    
+    
+    
+    
+    
+  #  ChoisirNom: () ->
+   #     storage = @readstorage()
+    #    unassignedlist ={}
+    #     for testname, detail of @getFailedTests(projectname)
+        
+        
+        
+        
+        
+    unassignedTest: ( testlist, timeout, unit, offset) ->
+      console.log "Looking for unassigned  tests in project : #{} since #{timeout} #{unit} (#{offset})."
       unassignedlist = {}
-      for project, projectname of testlist
-          console.log project
-          unassignedlist[project]=projectname if moment().diff(projectname.since, 'minutes') > process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
-          console.log JSON.stringify unassignedlist, null, 2
+      console.log JSON.stringify testlist, null, 4  
+      for testname, detail of testlist  
+        unassignedlist[testname]=testname if moment().diff(detail.since, unit) > timeout
+        testlist['nextbroadcastunassigned'] = moment().add('m', offset) if Object.keys(unassignedlist).length!=0 unless  moment().diff( testlist['nextbroadcastunassigned'],'minutes')<0 
+      if Object.keys(unassignedlist).length==0 then delete testlist['nextbroadcastunassigned'] #no need to broadcast if there is no unassigned test
+      console.log JSON.stringify unassignedlist, null, '\t'
+      console.log "testlist :\n"+ JSON.stringify testlist, null, '\t'
       return unassignedlist
 
     checkForTestStillFail:() ->
           storage = @readstorage()
+          offset=0
           for projectname of storage.projects
-            console.log "#{projectname} list of unassigned tests : " + JSON.stringify @unassignedTest(projectname, @getFailedTests(projectname)[0]), null, 4
-
+              offset+=5 unless Object.keys(  @unassignedTest( @getFailedTests(projectname)[0],process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES, 'minutes',offset )).length==0
+              console.log "#{projectname} list of unassigned tests : " + JSON.stringify @unassignedTest( @getFailedTests(projectname)[0],process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES, 'minutes',offset ), null, 4
+         
     # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
     checkForNewTestRun: () ->
