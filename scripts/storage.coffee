@@ -26,7 +26,7 @@ module.exports = (robot) ->
     robot.brain.save()
     msg.send "Done, previous brain was #{JSON.stringify backup, null, 4}"
    
-   robot.hear /ls$/i, (msg)->
+   robot.respond /ls$/i, (msg)->
        output = JSON.stringify robot.brain.data, null, '\t'
        msg.send output
    
