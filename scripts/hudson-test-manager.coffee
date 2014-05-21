@@ -79,6 +79,9 @@ class HudsonTestManager
      #Hubot check the 
     robot.respond /unassigned yet/i, ( msg ) =>
       @backend.checkForUnassignedTest()
+      
+    robot.respond /warning/i,(msg) =>
+      @backend.checkForTestStillFail()
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       @handleStopBroadcastingFailedTests msg

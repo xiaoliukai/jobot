@@ -82,35 +82,38 @@ class HudsonTestManagerBackendSingleton
       return unassignedlist
 
     checkForUnassignedTest:() ->
+        storage = @readstorage()
         depuis = 'since'
         unit = 'minutes'
         timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
-        storage = @readstorage()
         factor  = 1
-        offset  = factor * Object.keys( storage.projects ).length #Value for the offset, since it should be random
+        offset  = factor * Object.keys( storage.projects ).length #Value for the offset, since it should be rlinked to the number of unassigned test
         for project,projectname of storage.projects
             console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
             unassignedtest =  @sinceTest( @getFailedTests(project)[1],timeout, 'minutes',depuis )
-            projectname['nextbroadcasttime'] = moment().add('m', offset) if  moment().diff(projectname['nextbroadcasttime'],unit)>0 or not projectname['nextbroadcasttime']?
             if Object.keys(unassignedtest).length==0    #no need to broadcast if there is no unassigned test
                 delete projectname['nextbroadcasttime'] 
                 console.log "Nothing to broadcast..."#not unix
-            else 
-                console.log "Next broadcast in : #{-moment().diff(projectname['nextbroadcasttime'],unit)} #{unit}... "
-                offset+=factor 
-            if projectname['nextbroadcasttime']? and moment().diff(projectname['nextbroadcasttime'], 'minutes') >= 0 
-                @emit 'testunassigned', project, null  
-                projectname['nextbroadcasttime'] = moment().add('m', offset)
-              #console.log "#{projectname} list of unassigned tests : " + JSON.stringify @unassignedTest(storage, projectname, @getFailedTests(projectname)[0],process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES, 'minutes',offset ), null, 4
+            else if  moment().diff(projectname['nextbroadcasttime'],unit)>=0  or not projectname['nextbroadcasttime']?
+                    @emit 'testunassigned', project, null  if projectname['nextbroadcasttime']?
+                    offset+=factor 
+                    projectname['nextbroadcasttime'] = moment().add('m', offset)
+            else console.log "Next broadcast in : #{-moment().diff(projectname['nextbroadcasttime'],unit)} #{unit}... "
+           
     # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
     checkForTestStillFail:() ->
-            storage = @readstorage()
-            offset=1 * Object.keys( storage.projects ).length
+            storage  = @readstorage()
+            warning  = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS
+            escalade = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS 
+            unit = 'hours'
+            depuis = 'assignedDate'
+            #offset=1 * Object.keys( storage.projects ).length
             for project,projectname of storage.projects
-                ++offset unless Object.keys(  @unassignedTest(storage,project, @getFailedTests(project)[2], process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS, 'minutes',offset )).length==0
-                if projectname['nextbroadcasttime']? and moment().diff(projectname['nextbroadcasttime'], 'minutes') >= 0 then @emit 'testunassigned', project, null
-            
+                failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,depuis )
+                failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,depuis )
+                console.log 'Warning : ' + JSON.stringify( failingtestwarning, null, '\t') + '\n escalade : ' + JSON.stringify( failingtestescalade, null, 4)
+                for
 
 
     checkForNewTestRun: () ->
