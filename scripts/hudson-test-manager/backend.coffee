@@ -74,27 +74,6 @@ class HudsonTestManagerBackendSingleton
      
      
      # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
-
-# checkForUnassignedTest:() ->
-#        unassignedtest={}
- #       for projectname of @readstorage().projects
-  #          unassignedtest[projectname] = unassignedTest(projectname)
-   #         for detail.since of unassignedtest[projectname].faildtests
-            
-    
-    
-    
-    
-    
-    
-  #  ChoisirNom: () ->
-   #     storage = @readstorage()
-    #    unassignedlist ={}
-    #     for testname, detail of @getFailedTests(projectname)
-        
-        
-        
-        
         
     unassignedTest: ( testlist, timeout, unit, offset) ->
       console.log "Looking for unassigned  tests in project : #{} since #{timeout} #{unit} (#{offset})."
