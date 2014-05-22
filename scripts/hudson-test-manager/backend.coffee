@@ -78,7 +78,7 @@ class HudsonTestManagerBackendSingleton
     sinceTest: (testlist, timeout, unit, depuis) ->
       unassignedlist = {}
       for testname, detail of testlist  
-        unassignedlist[testname]=detail if moment().diff(detail?.depuis?, unit) > timeout
+        unassignedlist[testname]=detail if moment().diff(detail[depuis], unit) > timeout
       return unassignedlist
 
     checkForUnassignedTest:() ->
@@ -87,15 +87,15 @@ class HudsonTestManagerBackendSingleton
         unit = 'minutes'
         timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
         factor  = 1
-        offset  = factor * Object.keys( storage.projects ).length #Value for the offset, since it should be rlinked to the number of unassigned test
+        offset  = factor * (Object.keys( storage.projects ).length+1) #Value for the offset, since it should be rlinked to the number of unassigned test
         for project,projectname of storage.projects
             console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
-            unassignedtest =  @sinceTest( @getFailedTests(project)[1],timeout, 'minutes',depuis )
-            if Object.keys(unassignedtest).length==0    #no need to broadcast if there is no unassigned test
+            unassignedsincetest =  @sinceTest( @getFailedTests(project)[1],timeout, 'minutes',depuis )
+            if Object.keys(unassignedsincetest).length==0    #no need to broadcast if there is no unassigned test
                 delete projectname['nextbroadcasttime'] 
                 console.log "Nothing to broadcast..."#not unix
             else if  moment().diff(projectname['nextbroadcasttime'],unit)>=0  or not projectname['nextbroadcasttime']?
-                    @emit 'testunassigned', project, null  if projectname['nextbroadcasttime']?
+                    @emit 'testunassigned', project, unassignedsincetest, null  if projectname['nextbroadcasttime']?
                     offset+=factor 
                     projectname['nextbroadcasttime'] = moment().add('m', offset)
             else console.log "Next broadcast in : #{-moment().diff(projectname['nextbroadcasttime'],unit)} #{unit}... "
@@ -113,7 +113,7 @@ class HudsonTestManagerBackendSingleton
                 failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,depuis )
                 failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,depuis )
                 console.log 'Warning : ' + JSON.stringify( failingtestwarning, null, '\t') + '\n escalade : ' + JSON.stringify( failingtestescalade, null, 4)
-                for
+                #for
 
 
     checkForNewTestRun: () ->

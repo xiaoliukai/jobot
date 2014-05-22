@@ -365,11 +365,12 @@ class HudsonTestManager
 
   # Notify which tests are not assigned
   # TODO Call after configure threshold *if* tests are still unassigned
-  notifyUnassignedTest: ( projectname, to_jid ) =>
+  notifyUnassignedTest: ( projectname,unassignedsincetest ,to_jid ) =>
     roomname = @backend.getBroadcastRoomForProject projectname
     #return unless roomname
+    console.log JSON.stringify unassignedsincetest, null, 4
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
-    [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, false )
+    [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedsincetest, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
     @sendGroupChatMesssage roomname, report
 
