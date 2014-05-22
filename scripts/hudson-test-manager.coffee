@@ -379,20 +379,18 @@ class HudsonTestManager
   # TODO Notify manager of test fail past escalade threshold
   notifyTestStillFail: (storage, project,failingtestwarning,failingtestescalade, to_jid ) =>
      for testname, detail of failingtestwarning
-         @sendPrivateMesssage(detail.assigned, "#{detail.name} #{detail.url} sill fails since #{moment(detail.assignedDate).format()}") unless detail.notified
+         message = new Xmpp.Element( 'message', {} )
+         body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( " since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )         
+         @sendPrivateMesssage(detail.assigned, message) unless detail.notified #message should be sent only once.
          storage.projects[project].failedtests[testname].notified = true
-         console.log JSON.stringify storage.projects[project].failedtests[testname]
-          #[testname].notified = true
      for testname, detail of failingtestescalade
-         @sendPrivateMesssage(detail.assigned, "#{detail.name} #{detail.url} is assigned to #{detail.assigned} sill fails since #{moment(detail.assignedDate).format()}") unless detail.notifiedmanager
+         message = new Xmpp.Element( 'message', {} )
+         body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( "it was assigned to #{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
+         @sendPrivateMesssage(detail.assigned, message) unless detail.notifiedmanager
          storage.projects[project].failedtests[testname].notifiedmanager = true
          
-       #  storage.projects[projectname][testname].notifiedmanager = true
-    # Failed tests for project {}:
-    #- http://... is not assigned and fail since {failSinceDate}
-    # or 
-    #- http://... was assigned to {username | you} {x hours} ago
-    console.log 'todo'
 
   sendPrivateMesssage: ( to_jid, message ) ->
     envelope =
