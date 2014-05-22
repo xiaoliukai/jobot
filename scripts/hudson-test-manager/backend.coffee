@@ -78,7 +78,7 @@ class HudsonTestManagerBackendSingleton
     sinceTest: (testlist, timeout, unit, depuis) ->
       unassignedlist = {}
       for testname, detail of testlist  
-          console.log 'sinceTest: ' + moment().diff(detail[depuis], unit)
+         #console.log 'sinceTest: ' + moment().diff(detail[depuis], unit)
           unassignedlist[testname]=detail if moment().diff(detail[depuis], unit) >= timeout
       return unassignedlist
 
@@ -87,19 +87,19 @@ class HudsonTestManagerBackendSingleton
         depuis = 'since'
         unit = 'minutes'
         timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
-        factor  = 1
+        factor  = 5
         offset  = factor * (Object.keys( storage.projects ).length+1) #Value for the offset, since it should be rlinked to the number of unassigned test
         for project,projectname of storage.projects
             console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
             unassignedsincetest =  @sinceTest( @getFailedTests(project)[1],timeout, 'minutes',depuis )
             if Object.keys(unassignedsincetest).length==0    #no need to broadcast if there is no unassigned test
                 delete projectname['nextbroadcasttime'] 
-                console.log "Nothing to broadcast..."#not unix
+                console.log "\tNothing to broadcast..."#not unix
             else if  moment().diff(projectname['nextbroadcasttime'],unit)>=0  or not projectname['nextbroadcasttime']?
                     @emit 'testunassigned', project, unassignedsincetest, null  if projectname['nextbroadcasttime']?
-                    offset+=factor 
                     projectname['nextbroadcasttime'] = moment().add('m', offset)
-            else console.log "Next broadcast in : #{-moment().diff(projectname['nextbroadcasttime'],unit)} #{unit}... "
+                    offset+=factor 
+            else console.log "\tNext broadcast in : #{-moment().diff(projectname['nextbroadcasttime'],unit)} #{unit}... "
            
     # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
@@ -109,12 +109,11 @@ class HudsonTestManagerBackendSingleton
             escalade = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS 
             unit = 'hours'
             depuis = 'assignedDate'
-            #offset=1 * Object.keys( storage.projects ).length
             for project,projectname of storage.projects
                 failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,depuis )
                 failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,depuis )
-                console.log 'Warning : ' + JSON.stringify( failingtestwarning, null, '\t') + '\n escalade : ' + JSON.stringify( failingtestescalade, null, 4)
-                @emit 'teststillfail', storage, project, failingtestwarning,failingtestescalade, null
+            #Emit only if there is any test...
+                @emit 'teststillfail', storage, project, failingtestwarning,failingtestescalade, null if Object.keys(failingtestwarning).length!=0 or Object.keys(failingtestescalade).length!=0
 
 
     checkForNewTestRun: () ->
