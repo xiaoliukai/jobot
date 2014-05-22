@@ -71,14 +71,15 @@ class HudsonTestManagerBackendSingleton
       # Check for new builds
       @checkForNewTestRun()
       @checkForUnassignedTest()
-     
+      @checkForTestStillFail()
      
      # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
         
     sinceTest: (testlist, timeout, unit, depuis) ->
       unassignedlist = {}
       for testname, detail of testlist  
-        unassignedlist[testname]=detail if moment().diff(detail[depuis], unit) > timeout
+          console.log 'sinceTest: ' + moment().diff(detail[depuis], unit)
+          unassignedlist[testname]=detail if moment().diff(detail[depuis], unit) >= timeout
       return unassignedlist
 
     checkForUnassignedTest:() ->
@@ -113,7 +114,7 @@ class HudsonTestManagerBackendSingleton
                 failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,depuis )
                 failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,depuis )
                 console.log 'Warning : ' + JSON.stringify( failingtestwarning, null, '\t') + '\n escalade : ' + JSON.stringify( failingtestescalade, null, 4)
-                for
+                @emit 'teststillfail', storage, project, failingtestwarning,failingtestescalade, null
 
 
     checkForNewTestRun: () ->

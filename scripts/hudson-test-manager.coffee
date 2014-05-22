@@ -60,6 +60,7 @@ class HudsonTestManager
     # Listen in backend
     @backend.on 'testresult', @.processNewTestResult
     @backend.on 'testunassigned', @.notifyUnassignedTest
+    @backend.on 'teststillfail', @.notifyTestStillFail
     @backend.on 'err', ( err ) =>
       console.log "Error in backend: #{err}"
 
@@ -368,7 +369,7 @@ class HudsonTestManager
   notifyUnassignedTest: ( projectname,unassignedsincetest ,to_jid ) =>
     roomname = @backend.getBroadcastRoomForProject projectname
     #return unless roomname
-    console.log JSON.stringify unassignedsincetest, null, 4
+    #console.log JSON.stringify unassignedsincetest, null, 4
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
     [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedsincetest, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
@@ -376,9 +377,17 @@ class HudsonTestManager
 
   # TODO Notify assignee of test fail past warning threshold
   # TODO Notify manager of test fail past escalade threshold
-  notifyTestStillFail: ( projectname, to_jid ) ->
-   
-      
+  notifyTestStillFail: (storage, project,failingtestwarning,failingtestescalade, to_jid ) =>
+     for testname, detail of failingtestwarning
+         @sendPrivateMesssage(detail.assigned, "#{detail.name} #{detail.url} sill fails since #{moment(detail.assignedDate).format()}") unless detail.notified
+         storage.projects[project].failedtests[testname].notified = true
+         console.log JSON.stringify storage.projects[project].failedtests[testname]
+          #[testname].notified = true
+     for testname, detail of failingtestescalade
+         @sendPrivateMesssage(detail.assigned, "#{detail.name} #{detail.url} is assigned to #{detail.assigned} sill fails since #{moment(detail.assignedDate).format()}") unless detail.notifiedmanager
+         storage.projects[project].failedtests[testname].notifiedmanager = true
+         
+       #  storage.projects[projectname][testname].notifiedmanager = true
     # Failed tests for project {}:
     #- http://... is not assigned and fail since {failSinceDate}
     # or 
