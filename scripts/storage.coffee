@@ -16,7 +16,7 @@ module.exports = (robot) ->
     msg.send output
   
   robot.respond /time$/i, (msg) -> 
-    output = "Server time is : " + Moment().format()
+    output = "Server time is : " + Moment().add('m', 0)
     msg.send output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->

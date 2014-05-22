@@ -60,6 +60,7 @@ class HudsonTestManager
     # Listen in backend
     @backend.on 'testresult', @.processNewTestResult
     @backend.on 'testunassigned', @.notifyUnassignedTest
+    @backend.on 'teststillfail', @.notifyTestStillFail
     @backend.on 'err', ( err ) =>
       console.log "Error in backend: #{err}"
 
@@ -79,6 +80,9 @@ class HudsonTestManager
      #Hubot check the 
     robot.respond /unassigned yet/i, ( msg ) =>
       @backend.checkForUnassignedTest()
+      
+    robot.respond /warning/i,(msg) =>
+      @backend.checkForTestStillFail()
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       @handleStopBroadcastingFailedTests msg
@@ -362,24 +366,31 @@ class HudsonTestManager
 
   # Notify which tests are not assigned
   # TODO Call after configure threshold *if* tests are still unassigned
-  notifyUnassignedTest: ( projectname, to_jid ) =>
+  notifyUnassignedTest: ( projectname,unassignedsincetest ,to_jid ) =>
     roomname = @backend.getBroadcastRoomForProject projectname
     #return unless roomname
+    #console.log JSON.stringify unassignedsincetest, null, 4
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
-    [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, false )
+    [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedsincetest, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
     @sendGroupChatMesssage roomname, report
 
   # TODO Notify assignee of test fail past warning threshold
   # TODO Notify manager of test fail past escalade threshold
-  notifyTestStillFail: ( projectname, to_jid ) ->
-   
-      
-    # Failed tests for project {}:
-    #- http://... is not assigned and fail since {failSinceDate}
-    # or 
-    #- http://... was assigned to {username | you} {x hours} ago
-    console.log 'todo'
+  notifyTestStillFail: (storage, project,failingtestwarning,failingtestescalade, to_jid ) =>
+     for testname, detail of failingtestwarning
+         message = new Xmpp.Element( 'message', {} )
+         body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( " since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )         
+         @sendPrivateMesssage(detail.assigned, message) unless detail.notified #message should be sent only once.
+         storage.projects[project].failedtests[testname].notified = true
+     for testname, detail of failingtestescalade
+         message = new Xmpp.Element( 'message', {} )
+         body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( "it was assigned to #{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
+         @sendPrivateMesssage(detail.assigned, message) unless detail.notifiedmanager
+         storage.projects[project].failedtests[testname].notifiedmanager = true
+         
 
   sendPrivateMesssage: ( to_jid, message ) ->
     envelope =
