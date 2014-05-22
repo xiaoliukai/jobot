@@ -113,7 +113,7 @@ class HudsonTestManagerBackendSingleton
                 failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,depuis )
                 failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,depuis )
                 console.log 'Warning : ' + JSON.stringify( failingtestwarning, null, '\t') + '\n escalade : ' + JSON.stringify( failingtestescalade, null, 4)
-                #for
+                for
 
 
     checkForNewTestRun: () ->
