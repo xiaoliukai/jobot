@@ -25,7 +25,7 @@ class TeamcityConnection
     catch err
         console.log "There was an error do not forget to create a file auth.json with the apropriate credentials : #{err}"
         process.exit(1)
-    
+
     return req
 
   getJson: ( req, jsonCallback, builder ) ->
@@ -73,11 +73,11 @@ class TeamcityConnection
   # .url: http://...
   # .culprits: [{fullName:}]
   getBuildStatus: ( jobName, http, jsonCallback ) ->
-    # FIXED see ForProject Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
+    #  see ForProject Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
-    
+
     builder = ( res ) ->
-    
+
       result = {}
       result.jobName = jobName
       result.number = res.build[0].id
@@ -92,9 +92,9 @@ class TeamcityConnection
     return
 
   getBuildStatusForProject: (projectName, jobName, http, jsonCallback ) ->
-    # FIXED Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
+    #  Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},project:#{projectName},running:false,count:1" )
-    #console.log JSON.stringify req, null , 4 
+    #console.log JSON.stringify req, null , 4
     builder = ( res ) ->
      # console.log "res :\n " + JSON.stringify res,null, 4
       result = {}
@@ -106,7 +106,7 @@ class TeamcityConnection
       result.result = 'UNSTABLE' if res.build[0].status == 'FAILURE'
       result.result = 'FAILURE' if res.build[0].status == 'ERROR'
       result.url = res.build[0].webUrl + '&tab=testsInfo'
-    
+
       return result
     @getJson req, jsonCallback, builder
     return
@@ -117,7 +117,7 @@ class TeamcityConnection
   #   jobName: String the project or 'job' name
   #   failedTests: Map with key=testname, value=
   #     name: String of the test Class name
-  #     url: The URL to the test report 
+  #     url: The URL to the test report
 
   getTestReport: ( jobName, buildnumber, http, jsonCallback ) ->
     teamcity_url = @teamcity_url
@@ -130,20 +130,20 @@ class TeamcityConnection
       # Get failed tests
       result.failedTests = {}
       for testcase in res.testOccurrence
-    #could still be useful for further debuging. 
+    #could still be useful for further debuging.
     #     console.log JSON.stringify res, null, 4
         if testcase.status == 'FAILURE'
           className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
             name: className
             url: "#{teamcity_url}/viewLog.html?buildId=#{buildnumber}&tab=buildResultsDiv"
-        
+
         console.log "Failed test : " + result.failedTests
-            
-            
+
+
       return result
     @getJson req, jsonCallback, builder
     return
-    
+
 
 module.exports = TeamcityConnection

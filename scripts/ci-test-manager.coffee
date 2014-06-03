@@ -1,58 +1,58 @@
 ##
 # Description
-#   Monitor and dispatch build test failure on hudson 
-# 
-# Dependencies:  
-#   none  
-#  
-# Configuration: 
+#   Monitor and dispatch build test failure on hudson
+#
+# Dependencies:
+#   none
+#
+# Configuration:
 #   process.env.HUDSON_TEST_MANAGER_URL: The hudson URL
-#   FIX process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15 
-#   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24 
-#   TODO process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96 
-#  
+#   FIX process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15
+#    process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=24
+#    process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=96
+#
 # Commands:
 #   hubot Check builds - Trigger a check on latest builds
-#   hubot Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room. 
-#   hubot Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room. 
-#   hubot Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project. 
+#   hubot Broadcast failed tests for project {} to room {} - Tell Hubot to broadcast test results to the specified room.
+#   hubot Stop broadcasting failed tests for project {} to room {} - Tell Hubot to stop broadcast test results to the specified room.
+#   hubot Watch failed tests for project {} using build {} - Monitor tests for the specified build which is part of specified project.
 #   hubot Stop watching failed tests of build {} for project {} - Stop monitoring tests for the specified build which is part of specified project.
 #   hubot Show test(s) assigned to me - Report tests assigned to you
-# 
-#   hubot Set manager for project {} to {} - For security reason, must be sent in groupchat 
-#   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager 
-# 
-#   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user 
+#
+#   hubot Set manager for project {} to {} - For security reason, must be sent in groupchat
+#   hubot Set {warning|escalade} test fix delay for project {} to {} {hour|day}(s) - Configure warning or escalade threshold. Accepted only if from project manager
+#
+#   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user
 #   hubot Show test (report for project) {}
 #   hubot Show unassigned tests for (project) {}
-# 
-# Notes:  
-#   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project  
-#   (same codebase/branch) but with different scope. This allows to avoid collision/test assignment duplication. 
-#  
-# Author:  
-#   Manuel Darveau 
+#
+# Notes:
+#   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project
+#   (same codebase/branch) but with different scope. This allows to avoid collision/test assignment duplication.
+#
+# Author:
+#   Manuel Darveau
 #
 moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
-HudsonConnection =  if process.env.HUDSON=='true' then require( './hudson-test-manager/hudson_connection' ) else require('./hudson-test-manager/teamcity_connection')
-routes = require( './hudson-test-manager/routes' )
-test_manager_util = require( './hudson-test-manager/test_string_parser' )
+CIConnection =  if process.env.HUDSON=='true' then require( './ci-test-manager/hudson_connection' ) else require('./ci-test-manager/teamcity_connection')
+routes = require( './ci-test-manager/routes' )
+test_manager_util = require( './ci-test-manager/test_string_parser' )
 
 class HudsonTestManager
 
   constructor: ( @robot, @backend ) ->
-    unless process.env.HUDSON_TEST_MANAGER_URL and process.env.TEAMCITY_TEST_MANAGER_URL
-      @robot.logger.error 'HUDSON_TEST_MANAGER_URL or TEAMCITY_TEST_MANAGER_URL not set'
+    unless process.env.HUDSON_TEST_MANAGER_URL or process.env.TEAMCITY_TEST_MANAGER_URL
+      @robot.logger.error 'HUDSON_TEST_MANAGER_URL and TEAMCITY_TEST_MANAGER_URL are not set'
       process.exit( 1 )
 
     # See storeAnnouncement
     @state = {}
 
-    @hudson = new HudsonConnection( if process.env.HUDSON=='true' then process.env.HUDSON_TEST_MANAGER_URL else process.env.TEAMCITY_TEST_MANAGER_URL )
+    @hudson = new CIConnection( if process.env.HUDSON=='true' then process.env.HUDSON_TEST_MANAGER_URL else process.env.TEAMCITY_TEST_MANAGER_URL )
     console.log @hudson, process.env.HUDSON
-    @backend = require( './hudson-test-manager/backend' )( @robot, @hudson ) unless @backend
+    @backend = require( './ci-test-manager/backend' )( @robot, @hudson ) unless @backend
 
     # Setup "routes":
     @setupRoutes( robot )
@@ -74,15 +74,6 @@ class HudsonTestManager
         # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
-      #tell hubot to  call unassignedTest
-    robot.respond /check unassigned tests? in (\S*)/i, ( msg ) =>
-      @backend.unassignedTest(msg.match[1])
-     #Hubot check the 
-    robot.respond /unassigned yet/i, ( msg ) =>
-      @backend.checkForUnassignedTest()
-      
-    robot.respond /warning/i,(msg) =>
-      @backend.checkForTestStillFail()
     # Tell Hubot to stop broadcast test results to the specified room.
     robot.respond routes.STOP_BROADCASTING_FAILED_TESTS_FOR_PROJECT_$_TO_ROOM_$, ( msg ) =>
       @handleStopBroadcastingFailedTests msg
@@ -167,7 +158,6 @@ class HudsonTestManager
     testsString = msg.match[1]
     project = msg.match[2] ? @getLastAnnouncement( "#{msg.envelope.user.room}" )?.projectname
     user = msg.match[3].trim()
-    console.log user
     unless project
       msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )
       return
@@ -365,32 +355,33 @@ class HudsonTestManager
     @state[roomname].lastannouncement.failedtests = tests
 
   # Notify which tests are not assigned
-  # TODO Call after configure threshold *if* tests are still unassigned
-  notifyUnassignedTest: ( projectname,unassignedsincetest ,to_jid ) =>
+  #  Call after configure threshold *if* tests are still unassigned, unassignedsincetest is the list of test that are still unassigned since the timeout.
+  notifyUnassignedTest: ( projectname,unassignedsincetest ) =>
     roomname = @backend.getBroadcastRoomForProject projectname
-    #return unless roomname
-    #console.log JSON.stringify unassignedsincetest, null, 4
+    return unless roomname
     [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
     [report, announcement] =   @buildTestReport( projectname, failedTests, unassignedsincetest, assignedTests, false )
     @storeAnnouncement roomname, projectname, announcement
     @sendGroupChatMesssage roomname, report
 
-  # TODO Notify assignee of test fail past warning threshold
-  # TODO Notify manager of test fail past escalade threshold
-  notifyTestStillFail: (storage, project,failingtestwarning,failingtestescalade, to_jid ) =>
+  #  Notify assignee of test fail past warning threshold
+  #  Notify manager of test fail past escalade threshold
+  notifyTestStillFail: (storage, project, failingtestwarning, failingtestescalade ) =>
+
      for testname, detail of failingtestwarning
          message = new Xmpp.Element( 'message', {} )
          body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
-         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( " since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )         
+         body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( " since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
          @sendPrivateMesssage(detail.assigned, message) unless detail.notified #message should be sent only once.
          storage.projects[project].failedtests[testname].notified = true
+
      for testname, detail of failingtestescalade
          message = new Xmpp.Element( 'message', {} )
          body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
          body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( "it was assigned to #{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
          @sendPrivateMesssage(detail.assigned, message) unless detail.notifiedmanager
          storage.projects[project].failedtests[testname].notifiedmanager = true
-         
+
 
   sendPrivateMesssage: ( to_jid, message ) ->
     envelope =
