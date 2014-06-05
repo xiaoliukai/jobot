@@ -8,3 +8,6 @@ node_modules*
 # IntelliJ Idea
 *.iml
 .idea
+
+# The hudson/teamcity username/pass
+auth.json
