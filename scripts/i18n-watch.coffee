@@ -30,7 +30,7 @@ class I18nWatcher
     @workdirlocks = {}
 
     unless process.env.I18N_WATCH_WORKDIR
-      @robot.logger.error 'I18N_WATCH_WORKDIR_URL not set'
+      @robot.logger.error 'I18N_WATCH_WORKDIR not set'
       process.exit( 1 )
     
     @rootworkdir = process.env.I18N_WATCH_WORKDIR

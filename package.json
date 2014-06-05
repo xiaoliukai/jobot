@@ -31,7 +31,7 @@
         "eyes": "",
         "natural-compare-lite": "0.4.6",
         "async": "0.2.10",
-        
+        "node-xmpp": "0.3.2", 
         "moment": "2.5.1",
         
         "xpath": "0.0.6",

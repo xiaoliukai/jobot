@@ -2,10 +2,10 @@
 
 inspect = require( 'eyes' ).inspector( {maxLength: false} )
 
-class TeamcityConnection
+class HudsonConnection
 
-  constructor: ( teamcity_url ) ->
-    @teamcity_url = teamcity_url
+  constructor: ( hudson_url ) ->
+    @hudson_url = hudson_url
 
   #
   #
@@ -16,8 +16,15 @@ class TeamcityConnection
   authRequest: ( http, url ) ->
     #req = http( url, {rejectUnauthorized: false} )
     req = http( url )
-    req.auth( 'jobot', 'jobot' )
-    req.header( 'Accept', 'application/json' )
+	# the password and the user for the service is now stored in a file called auth.json in the root directory
+    fs = require 'fs'
+    path = require 'path'
+    try
+        login = JSON.parse fs .readFileSync   path.resolve ".", "auth.json"
+        req.auth( login.hudson.user, login.hudson.password )
+    catch err
+        console.log "There was an I/O error : #{err}"
+        process.exit(1)
     return req
 
   getJson: ( req, jsonCallback, builder ) ->
@@ -65,17 +72,13 @@ class TeamcityConnection
   # .url: http://...
   # .culprits: [{fullName:}]
   getBuildStatus: ( jobName, http, jsonCallback ) ->
-    # TODO Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
-    req = @authRequest( http, "#{@teamcity_url}/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
+    req = @authRequest( http, "#{@hudson_url}/job/#{jobName}/lastCompletedBuild/api/json" )
     builder = ( res ) ->
       result = {}
       result.jobName = jobName
-      result.number = res.build.id
-      # Convert to a common enum
-      result.result = 'SUCCESS' if res.build.status == 'SUCCESS'
-      result.result = 'UNSTABLE' if res.build.status == 'FAILURE'
-      result.result = 'FAILURE' if res.build.status == 'ERROR'
-      result.url = res.build.webUrl + '&tab=testsInfo'
+      result.number = res.number
+      result.result = res.result
+      result.url = res.url
       return result
     @getJson req, jsonCallback, builder
     return
@@ -87,25 +90,26 @@ class TeamcityConnection
   #     name: String of the test Class name
   #     url: The URL to the test report
   getTestReport: ( jobName, buildnumber, http, jsonCallback ) ->
-    teamcity_url = @teamcity_url
-    req = @authRequest( http, "#{@teamcity_url}/app/rest/testOccurrences?locator=build:#{buildnumber},count:9999" )
+    hudson_url = @hudson_url
+    req = @authRequest( http, "#{@hudson_url}/job/#{jobName}/#{buildnumber}/testReport/api/json" )
     builder = ( res ) ->
       result = {}
       result.jobName = jobName
 
       # Get failed tests
       result.failedTests = {}
-      for testcase in res.testOccurrence
-        if testcase.status == 'FAILURE'
-          className = testcase.className.substring( 0, testcase.className.lastIndexOf( '.' ) )
-          result.failedTests[className] =
-            name: className
-            url: "#{teamcity_url}/viewLog.html?buildId=#{buildnumber}&tab=buildResultsDiv"
+      for suite in res.suites
+        for testcase in suite.cases
+          if testcase.status == 'FAILED' or testcase.status == 'REGRESSION'
+            # The package name is in a separate path element than test Class name
+            lastDot = testcase.className.lastIndexOf( '.' )
+            urlPath = testcase.className.substring( 0, lastDot ) + '/' + testcase.className.substring( lastDot + 1 )
+            result.failedTests[testcase.className] =
+              name: testcase.className
+              url: "#{hudson_url}/job/#{jobName}/lastCompletedBuild/testReport/#{urlPath}"
 
-            
-            
       return result
     @getJson req, jsonCallback, builder
     return
 
-module.exports = TeamcityConnection
+module.exports = HudsonConnection

@@ -3,7 +3,7 @@ moment = require 'moment'
 
 util = require 'util'
 
-HudsonConnection = require './hudson_connection'
+#if HUDSON is undefined, Teamcity will be used by default.
 
 # Datastructure in brain:
 # HudsonTestManagerBackend
@@ -69,9 +69,48 @@ class HudsonTestManagerBackendSingleton
     loop: () =>
       # Check for new builds
       @checkForNewTestRun()
+      @checkForUnassignedTest()
+      @checkForTestStillFail()
 
-    # TODO Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
-    # TODO Check and notifyTestStillFail() if testfail past warning or escalade threshold
+     #  Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+     #This method return the the subset of
+    sinceTest: (testlist, timeout, unit, duration) ->
+      unassignedlist = {}
+      for testname, detail of testlist
+          unassignedlist[testname]=detail if moment().diff(detail[duration], unit) >= timeout
+      return unassignedlist
+
+    checkForUnassignedTest:() ->
+        storage = @readstorage()
+        duration = 'since'
+        unit = 'minutes'
+        timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
+        factor  = 5
+        offset  = factor * (Object.keys( storage.projects ).length+1) #Value for the offset, since it should be linked to the number of unassigned test
+        for project,projectname of storage.projects
+            console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
+            unassignedsincetest =  @sinceTest( @getFailedTests(project)[1], timeout, 'minutes', duration )
+            if Object.keys(unassignedsincetest).length==0    #no need to broadcast if there is no unassigned test
+                delete projectname['nextbroadcasttime']
+            else if  moment().diff(projectname['nextbroadcasttime'],unit)>=0  or not projectname['nextbroadcasttime']?
+                    @emit 'testunassigned', project, unassignedsincetest, null  if projectname['nextbroadcasttime']?
+                    projectname['nextbroadcasttime'] = moment().add('m', offset)
+                    offset+=factor
+
+    #  Check and notifyTestStillFail() if testfail past warning or escalade threshold
+
+    checkForTestStillFail:() ->
+            storage  = @readstorage()
+            warning  = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS
+            escalade = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS
+            unit = 'hours'
+            duration = 'assignedDate'
+            for project,projectname of storage.projects
+                failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,duration )
+                failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,duration )
+            #Emit only if there is any test...
+                @emit 'teststillfail', storage, project, failingtestwarning,failingtestescalade, null if Object.keys(failingtestwarning).length!=0 or Object.keys(failingtestescalade).length!=0
+
 
     checkForNewTestRun: () ->
       console.log "Checking builds..."
@@ -186,7 +225,7 @@ class HudsonTestManagerBackendSingleton
     #
     getThresholdForProject: ( project, level ) ->
       @readstorage().projects[project]?.fix_delay?[level]
-      
+
     #
     # Store currently failling tests for a project.
     # tests: Map with key=testname, value={name:, url:}
@@ -207,12 +246,12 @@ class HudsonTestManagerBackendSingleton
         # Copy current assignment if any
         for test, detail of failedtests
           if previousFailedTest?[test]
-            console.log "#{test} failed on build ${build} but failed previously"
+            console.log "#{test} failed on build #{build} but failed previously"
             # Was already failling
             currentFailedTest[test] = previousFailedTest?[test]
             delete previousFailedTest?[test]
           else
-            console.log "#{test} failed on build ${build} and is initial failure"
+            console.log "#{test} failed on build #{build} and is initial failure"
             # New failed test
             currentFailedTest[test] =
               name: detail.name
@@ -234,7 +273,7 @@ class HudsonTestManagerBackendSingleton
 
         # Store current test fail
         storage.projects[project].failedtests = currentFailedTest
-        
+
       return [ fixedTests, newFailedTest, currentFailedTest ]
 
     #
@@ -253,7 +292,7 @@ class HudsonTestManagerBackendSingleton
       for testname, detail of storage.projects[project].failedtests
         unassigned[testname] = detail if not detail.assigned
         assigned[testname] = detail if detail.assigned
-        
+
       return [ failedtests, unassigned, assigned ]
 
     #
@@ -275,7 +314,7 @@ class HudsonTestManagerBackendSingleton
     #    since: moment of first test failure
     #    assigned: User assigned
     #    assignedDate: moment of assignment
-    #  assignedDate: moment when was the test assigned 
+    #  assignedDate: moment when was the test assigned
     #
     getAssignedTests: ( user ) ->
       assignedtests = {}
