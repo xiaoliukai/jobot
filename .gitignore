@@ -9,6 +9,11 @@ node_modules*
 *.iml
 .idea
 
+<<<<<<< HEAD
 # Local files
 auth.json
 brain-dump.json
+=======
+# The hudson/teamcity username/pass
+auth.json
+>>>>>>> jobot/manuel/master

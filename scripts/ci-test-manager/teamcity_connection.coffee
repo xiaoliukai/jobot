@@ -17,14 +17,14 @@ class TeamcityConnection
     fs = require 'fs'
     path = require 'path'
     try
-        login = JSON.parse fs.readFileSync path.resolve ".", "auth.json"
-        #req = http( url, {rejectUnauthorized: false} )
-        req = http( url )
-        req.auth( login.teamcity.user, login.teamcity.password)
-        req.header( 'Accept', 'application/json' )
+      login = JSON.parse fs.readFileSync path.resolve ".", "auth.json"
+      #req = http( url, {rejectUnauthorized: false} )
+      req = http( url )
+      req.auth( login.teamcity.user, login.teamcity.password )
+      req.header( 'Accept', 'application/json' )
     catch err
-        console.log "There was an error do not forget to create a file auth.json with the apropriate credentials : #{err}"
-        process.exit(1)
+      console.log "There was an error do not forget to create a file auth.json with the apropriate credentials : #{err}"
+      process.exit( 1 )
 
     return req
 
@@ -91,12 +91,12 @@ class TeamcityConnection
     @getJson req, jsonCallback, builder
     return
 
-  getBuildStatusForProject: (projectName, jobName, http, jsonCallback ) ->
+  getBuildStatusForProject: ( projectName, jobName, http, jsonCallback ) ->
     #  Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},project:#{projectName},running:false,count:1" )
     #console.log JSON.stringify req, null , 4
     builder = ( res ) ->
-     # console.log "res :\n " + JSON.stringify res,null, 4
+      # console.log "res :\n " + JSON.stringify res,null, 4
       result = {}
       result.jobName = jobName
       result.projectName = projectName
@@ -130,8 +130,8 @@ class TeamcityConnection
       # Get failed tests
       result.failedTests = {}
       for testcase in res.testOccurrence
-    #could still be useful for further debuging.
-    #     console.log JSON.stringify res, null, 4
+        #could still be useful for further debuging.
+        #     console.log JSON.stringify res, null, 4
         if testcase.status == 'FAILURE'
           className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =

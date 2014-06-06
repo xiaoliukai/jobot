@@ -72,51 +72,51 @@ class HudsonTestManagerBackendSingleton
       @checkForUnassignedTest()
       @checkForTestStillFail()
 
-     #  Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
-     #This method return the the subset of
-    sinceTest: (testlist, timeout, unit, duration) ->
+    #  Check and notifyUnassignedTest() after env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES minutes
+    #This method return the the subset of
+    getFilteredTestsByDuration: ( testlist, timeout, unit, duration ) ->
       unassignedlist = {}
       for testname, detail of testlist
-          unassignedlist[testname]=detail if moment().diff(detail[duration], unit) >= timeout
+        unassignedlist[testname] = detail if moment().diff( detail[duration], unit ) >= timeout
       return unassignedlist
 
-    checkForUnassignedTest:() ->
-        storage = @readstorage()
-        duration = 'since'
-        unit = 'minutes'
-        timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
-        factor  = 5
-        offset  = factor * (Object.keys( storage.projects ).length+1) #Value for the offset, since it should be linked to the number of unassigned test
-        for project,projectname of storage.projects
-            console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
-            unassignedsincetest =  @sinceTest( @getFailedTests(project)[1], timeout, 'minutes', duration )
-            if Object.keys(unassignedsincetest).length==0    #no need to broadcast if there is no unassigned test
-                delete projectname['nextbroadcasttime']
-            else if  moment().diff(projectname['nextbroadcasttime'],unit)>=0  or not projectname['nextbroadcasttime']?
-                    @emit 'testunassigned', project, unassignedsincetest, null  if projectname['nextbroadcasttime']?
-                    projectname['nextbroadcasttime'] = moment().add('m', offset)
-                    offset+=factor
+    checkForUnassignedTest: () ->
+      storage = @readstorage()
+      duration = 'since'
+      unit = 'minutes'
+      timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
+      factor = 5
+      offset = factor * (Object.keys( storage.projects ).length + 1) #Value for the offset, since it should be linked to the number of unassigned test
+      for project,projectname of storage.projects
+        console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
+        unassignedsincetest = @getFilteredTestsByDuration( @getFailedTests( project )[1], timeout, 'minutes', duration )
+        if Object.keys( unassignedsincetest ).length == 0    #no need to broadcast if there is no unassigned test
+          delete projectname['nextbroadcasttime']
+        else if  moment().diff( projectname['nextbroadcasttime'], unit ) >= 0 or not projectname['nextbroadcasttime']?
+          @emit 'testunassigned', project, unassignedsincetest, null  if projectname['nextbroadcasttime']?
+          projectname['nextbroadcasttime'] = moment().add( 'm', offset )
+          offset += factor
 
     #  Check and notifyTestStillFail() if testfail past warning or escalade threshold
 
-    checkForTestStillFail:() ->
-            storage  = @readstorage()
-            warning  = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS
-            escalade = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS
-            unit = 'hours'
-            duration = 'assignedDate'
-            for project,projectname of storage.projects
-                failingtestwarning= @sinceTest( @getFailedTests(project)[2],warning , unit ,duration )
-                failingtestescalade= @sinceTest( @getFailedTests(project)[2],escalade , unit ,duration )
-            #Emit only if there is any test...
-                @emit 'teststillfail', storage, project, failingtestwarning,failingtestescalade, null if Object.keys(failingtestwarning).length!=0 or Object.keys(failingtestescalade).length!=0
+    checkForTestStillFail: () ->
+      storage = @readstorage()
+      warning = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS
+      escalade = process.env.HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS
+      unit = 'hours'
+      duration = 'assignedDate'
+      for project,projectname of storage.projects
+        failingtestwarning = @getFilteredTestsByDuration( @getFailedTests( project )[2], warning, unit, duration )
+        failingtestescalade = @getFilteredTestsByDuration( @getFailedTests( project )[2], escalade, unit, duration )
+        #Emit only if there is any test...
+        @emit 'teststillfail', storage, project, failingtestwarning, failingtestescalade, null if Object.keys( failingtestwarning ).length != 0 or Object.keys( failingtestescalade ).length != 0
 
 
     checkForNewTestRun: () ->
       console.log "Checking builds..."
       storage = @readstorage()
       for projectname of storage.projects
-        do (projectname) =>
+        do ( projectname ) =>
           console.log "  for project #{projectname}"
           for buildname, lastbuilddetail of storage.projects[projectname]?.builds
             do ( buildname, lastbuilddetail ) =>
@@ -138,7 +138,7 @@ class HudsonTestManagerBackendSingleton
         when 'UNSTABLE'
           @parseTestRunOfProject projectname, buildname, buildresult.number
         when 'SUCCESS'
-          # Call @persistFailedTests without failed tests
+        # Call @persistFailedTests without failed tests
           [fixedTests, newFailedTest, currentFailedTest] = @persistFailedTests projectname, buildname, {}
           @emit 'testresult', projectname, buildname, fixedTests, newFailedTest, currentFailedTest
         when 'FAILURE'
