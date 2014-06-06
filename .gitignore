@@ -9,5 +9,8 @@ node_modules*
 *.iml
 .idea
 
-# The hudson/teamcity username/pass
+*.bak
+# Local files
 auth.json
+brain-dump.json
+=======

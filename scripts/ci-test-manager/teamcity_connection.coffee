@@ -122,7 +122,6 @@ class TeamcityConnection
   getTestReport: ( jobName, buildnumber, http, jsonCallback ) ->
     teamcity_url = @teamcity_url
     req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/testOccurrences?locator=build:#{buildnumber},count:9999,status:FAILURE" )
-    #console.log "HELLO WORLD"
     builder = ( res ) ->
       result = {}
       result.jobName = jobName
@@ -130,9 +129,7 @@ class TeamcityConnection
       # Get failed tests
       result.failedTests = {}
       for testcase in res.testOccurrence
-        #could still be useful for further debuging.
-        #     console.log JSON.stringify res, null, 4
-        if testcase.status == 'FAILURE'
+        unless   testcase.currentlyMuted is true        
           className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
             name: className

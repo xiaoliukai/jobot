@@ -70,7 +70,7 @@ class HudsonTestManager
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
     robot.respond /check builds?/i, ( msg ) =>
-      @backend.checkForNewTestRun()
+      @backend.loop()
         # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
       @handleBroadcastTest msg
@@ -251,18 +251,18 @@ class HudsonTestManager
     unless user
       msg.reply "Sorry, I do not know you :-P"
       return
-
+    message = new Xmpp.Element( 'message', {} )
+    body =  message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
     report = ""
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
       for testname, testdetail of projectdetail.failedtests
         if testdetail.assigned == user
           unless projectNamePrinted
-            report += "Project #{projectname}:\n"
-            projectNamePrinted = true
-          report += "  #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()} (#{testdetail.url})\n"
+            body.t( "Project #{projectname}:\n").c('br')
+            body.c('a',{href: testdetail.url}).t(" #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
 
-    msg.send report
+    msg.send message
 
   #
   # Build a test report.
