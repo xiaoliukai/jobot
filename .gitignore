@@ -2,14 +2,20 @@ node_modules*
 .DS_Store*
 
 # Javascript and transpiller map
+*.js
+*.map
 **/*.js
 **/*.map
+**/**/*.js
+**/**/*.map
 
 # IntelliJ Idea
 *.iml
 .idea
 
 *.bak
+**/*.bak
+**/**/*.bak
 # Local files
 auth.json
 brain-dump.json
