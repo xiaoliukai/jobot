@@ -128,8 +128,8 @@ class HudsonTestManager
     msg.send( "Will watch build #{build} in scope of #{project}" )
 
   handleStopWatchingTests: ( msg ) ->
-    project = msg.match[1]
-    build = msg.match[2]
+    project = msg.match[2]
+    build = msg.match[1]
     @backend.stopWatchingBuildForProject build, project
     msg.send( "Won't watch build #{build} in scope of #{project} anymore" )
 
