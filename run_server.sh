@@ -27,7 +27,7 @@ export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=96       #96
 
 # export HUBOT_XMPP_PASSWORD=XXXXXXXXXXXXXXX
 # export JABBER_DOMAIN
-. $rootj/config
+. $rootj/data/config
 
 
 # ${HUBOT_XMPP_PASSWORD:?"Need to set HUBOT_XMPP_PASSWORD: export HUBOT_XMPP_PASSWORD=..."}
@@ -48,4 +48,4 @@ export HUBOT_XMPP_PORT=5222
 
 cd  $root_jobot
 
-exec bin/hubot -n jobot -a xmpp
+exec bin/hubot -n jobot -a xmpp > $rootj/data/jobot.log 2>&1 
