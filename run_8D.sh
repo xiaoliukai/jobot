@@ -31,4 +31,4 @@ export HUBOT_XMPP_ROOMS=jobottest@conference.jabber.8d.com,backoffice@conference
 export HUBOT_XMPP_HOST=jabber.8d.com
 export HUBOT_XMPP_PORT=5222
 
-./bin/hubot -n jobot -a xmpp
+exec ./bin/hubot -n jobot -a xmpp
