@@ -87,7 +87,7 @@ class I18nWatcher
         console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
         @processProject info, ( err, info ) =>
           if err
-            @sendGroupChatMesssage info.room, "Error checking for i18n with #{info.branch} see log"
+            @sendGroupChatMesssage info.room, "Error checking for i18n on #{info.branch} see log"
             console.log err
           else
             return if info.untranslatedKeys.length == 0
