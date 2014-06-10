@@ -12,5 +12,5 @@ class HudsonTestManagerRoutes
   @SHOW_TEST_ASSIGNED_TO_ME = /Show tests assigned to me/i
   @SHOW_TEST_REPORT_FOR_PROJECT_$ = /Show test (?:report )?(?:for )?(?:project )?(\S*)/i
   @SHOW_UNASSIGNED_TEST_FOR_PROJECT_$ = /Show unassigned tests? for (?:project )?(\S*)/i
-  
-module.exports = HudsonTestManagerRoutes 
+  @UPGRADE_YOURSELF=/upgrade yourself/i
+module.exports = HudsonTestManagerRoutes
