@@ -5,7 +5,7 @@
 export JAVA_HOME=/usr/local/jvm/latest7
 export M2_HOME=/data/cloud/apache-maven-3.0.3
 export PATH="$rootj_jobot/node_modules/.bin:$rootj_jobot/node_modules/hubot/node_modules/.bin:$PATH"
-export PATH=$PATH:$M2_HOME/bin:$JAVA_HOME
+export PATH=$PATH:$M2_HOME/bin:$JAVA_HOME:/usr/local/bin
 
 export rootj=/data/cloud/jobot
 export rootj_jobot=$rootj/jobot
