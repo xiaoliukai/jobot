@@ -1,18 +1,18 @@
 ##
 # Description
-#   Monitor i18n key translation 
-# 
-# Dependencies:  
-#   none  
-#  
-# Configuration: 
+#   Monitor i18n key translation
+#
+# Dependencies:
+#   none
+#
+# Configuration:
 #   process.env.I18N_WATCH_WORKDIR: The working directory for git clone
-#  
+#
 # Commands:
 #   hubot Watch translations on git repo {git url} branch {branch name} and broadcast to room {full room name}
 #
-# Author:  
-#   Manuel Darveau 
+# Author:
+#   Manuel Darveau
 #
 
 fs = require 'fs'
@@ -32,7 +32,7 @@ class I18nWatcher
     unless process.env.I18N_WATCH_WORKDIR
       @robot.logger.error 'I18N_WATCH_WORKDIR not set'
       process.exit( 1 )
-    
+
     @rootworkdir = process.env.I18N_WATCH_WORKDIR
     fs.mkdirSync @rootworkdir unless fs.existsSync @rootworkdir
 
@@ -54,7 +54,7 @@ class I18nWatcher
 
       @watchProject repoURL, branch, room, ( message )->
         msg.send message
-    
+
   loop: () =>
     # Check for new commits
     @checkForChanges()
@@ -87,7 +87,8 @@ class I18nWatcher
         console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
         @processProject info, ( err, info ) =>
           if err
-            @sendGroupChatMesssage info.room, "Error checking for i18n: #{err}"
+            @sendGroupChatMesssage info.room, "Error checking for i18n see log"
+            console.log err
           else
             return if info.untranslatedKeys.length == 0
             message = "Untranslated keys for #{info.giturl}/#{info.branch}:\n"
