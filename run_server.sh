@@ -26,7 +26,7 @@ export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=24      #24
 export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=96       #96
 
 # export HUBOT_XMPP_PASSWORD=XXXXXXXXXXXXXXX
-# export JABBER_DOMAIN
+# export JABBER_DOMAIN=XXXXXXXXXXXXX
 . $rootj/data/config
 
 
@@ -41,11 +41,11 @@ export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=96       #96
 
 export HUBOT_XMPP_CONFERENCE_DOMAINS=conference.$JABBER_DOMAIN
 export HUBOT_XMPP_USERNAME=jobot@$JABBER_DOMAIN
-#export HUBOT_XMPP_ROOMS=jobottest@conference.JABBER_DOMAIN
-export HUBOT_XMPP_ROOMS=backoffice@conference.JABBER_DOMAIN
-export HUBOT_XMPP_HOST=JABBER_DOMAIN
+#export HUBOT_XMPP_ROOMS=jobottest@conference.$JABBER_DOMAIN
+export HUBOT_XMPP_ROOMS=backoffice@conference.$JABBER_DOMAIN
+export HUBOT_XMPP_HOST=$JABBER_DOMAIN
 export HUBOT_XMPP_PORT=5222
 
-cd  $root_jobot
+cd  $rootj_jobot
 
-exec bin/hubot -n jobot -a xmpp > $rootj/data/jobot.log 2>&1 
+exec bin/hubot -n jobot -a xmpp > $rootj/data/jobot.log 2>&1
