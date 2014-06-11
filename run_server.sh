@@ -32,8 +32,8 @@ export HUBOT_ADAPTER_PATH=$rootj_jobot/node_modules/
 # Jabber external config
 # export HUBOT_XMPP_PASSWORD=XXXXXXXXXXXXXXX
 # export JABBER_DOMAIN=XXXXXXXXXXXXX
-# export ROOM=backoffice
-
+#
+# export HUBOT_XMPP_ROOMS=$ROOM@conference.$JABBER_DOMAIN
 . $rootj/data/config
 
 # Jabber connection :
@@ -41,7 +41,6 @@ export HUBOT_ADAPTER_PATH=$rootj_jobot/node_modules/
 export HUBOT_XMPP_CONFERENCE_DOMAINS=conference.$JABBER_DOMAIN
 export HUBOT_XMPP_USERNAME=jobot@$JABBER_DOMAIN
 #export HUBOT_XMPP_ROOMS=jobottest@conference.$JABBER_DOMAIN
-export HUBOT_XMPP_ROOMS=$ROOM@conference.$JABBER_DOMAIN
 export HUBOT_XMPP_HOST=$JABBER_DOMAIN
 export HUBOT_XMPP_PORT=5222
 
