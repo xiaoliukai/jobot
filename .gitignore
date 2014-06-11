@@ -13,10 +13,12 @@ node_modules*
 *.iml
 .idea
 
+# Backup
 *.bak
 **/*.bak
 **/**/*.bak
+
 # Local files
 auth.json
 brain-dump.json
-=======
+jobot.log
