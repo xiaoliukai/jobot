@@ -2,7 +2,7 @@
 HOSTNAME=`hostname`
 
 export HUBOT_LOG_LEVEL=debug
-coffee -cm .
+# coffee -cm .
 export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=2
 export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=1
 export HUDSON_TEST_MANAGER_URL="https://hudson.priv.8d.com:8443"
@@ -18,7 +18,9 @@ export HUBOT_XMPP_ROOMS=deploy@conference.${HOSTNAME}
 export HUBOT_XMPP_HOST=localhost
 export HUBOT_XMPP_PORT=5222
 export JOBOT_LOG=.
-export I18N_WATCH_WORKDIR=.hubot/
+export OFFSET=15
+export FACTOR=120
+export I18N_WATCH_WORKDIR=.
 export HUDSON="false"
 export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=10
 exec ./bin/hubot -n jobot -a xmpp >> jobot.log

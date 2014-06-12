@@ -22,3 +22,4 @@ node_modules*
 auth.json
 brain-dump.json
 jobot.log
+i18n
