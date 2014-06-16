@@ -34,10 +34,11 @@ module.exports = (robot) ->
       msg.send respond
 
   robot.respond /show log/i, (msg) ->
-    respond = ""
+    respond = "You can access the following files :\n"
+    i=1
     try
       dir_log = fs.readdirSync "#{process.env.JOBOT_LOG}"
-      respond += "#{name} \n" for name in dir_log
+      respond += "#{i++}-#{name} \n" for name in dir_log when name isnt 'jobot.log'
     catch err then respond = "oups i'll fix this #{err}"
     finally
       msg.send respond
