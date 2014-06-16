@@ -17,10 +17,13 @@ export HUBOT_XMPP_PASSWORD=hubot
 export HUBOT_XMPP_ROOMS=deploy@conference.${HOSTNAME}
 export HUBOT_XMPP_HOST=localhost
 export HUBOT_XMPP_PORT=5222
-export JOBOT_LOG=.
+export JOBOT_LOG=/Users/sboucher/Project/jobot/log
 export OFFSET=15
 export FACTOR=120
 export I18N_WATCH_WORKDIR=.
 export HUDSON="false"
 export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=10
-exec ./bin/hubot -n jobot -a xmpp >> `date '+%m_%d_%y-%H:%M'`.log 2>&1
+rm $JOBOT_LOG/jobot.log
+touch $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log
+ln -s $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log $JOBOT_LOG/jobot.log
+exec ./bin/hubot -n jobot -a xmpp >> $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log 2>&1
