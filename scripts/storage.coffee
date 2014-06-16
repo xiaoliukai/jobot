@@ -5,7 +5,7 @@
 #   hubot show users - Display all users that hubot knows about
 #   hubot show storage - Display the contents that are persisted in the brain
 #   hubot time - display the server time for hubot
-#   hubot show log $n- Print jobot logs $n last line of log, default 100 lines 
+
 
 Util = require "util"
 Moment = require 'moment'
@@ -39,13 +39,3 @@ module.exports = (robot) ->
       response += " <#{user.email_address}>" if user.email_address
       response += "\n"
     msg.send response
-
-
-  robot.respond /show log( \d+)?/i, (msg) ->
-    endline = msg.match[1]
-    respond = ""
-    log = fs.readFileSync "#{process.env.JOBOT_LOG}/jobot.log"
-    arr = log.toString().split('\n')
-    arr =  if endline > 0 then arr[-endline..] else arr[-100..]
-    respond += "#{line} \n" for line in arr
-    msg.send respond
