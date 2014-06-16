@@ -38,7 +38,12 @@ module.exports = (robot) ->
     i=1
     try
       dir_log = fs.readdirSync "#{process.env.JOBOT_LOG}"
-      respond += "#{i++}-#{name} \n" for name in dir_log when name isnt 'jobot.log'
+      respond += "#{i++}- #{name} \n" for name in dir_log when name isnt 'jobot.log'
     catch err then respond = "oups i'll fix this #{err}"
     finally
       msg.send respond
+
+    robot.respond /clean log/i, (msg) ->
+      respond = "OK I will keep the last log."
+      dir_log = fs.readdirSync "#{process.env.JOBOT_LOG}"
+      
