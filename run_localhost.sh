@@ -23,4 +23,4 @@ export FACTOR=120
 export I18N_WATCH_WORKDIR=.
 export HUDSON="false"
 export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=10
-exec ./bin/hubot -n jobot -a xmpp >> jobot.log
+exec ./bin/hubot -n jobot -a xmpp >> `date '+%m_%d_%y-%H:%M'`.log 2>&1
