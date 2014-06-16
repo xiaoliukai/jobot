@@ -48,5 +48,4 @@ export HUBOT_XMPP_HOST=$JABBER_DOMAIN
 export HUBOT_XMPP_PORT=5222
 
 cd  $rootj_jobot
-touch ${JOBOT_LOG}/`date '+%D-%H:%M'`.log
-exec bin/hubot -n jobot -a xmpp > $JOBOT_LOG/`date '+%D-%H:%M'`.log 2>&1
+exec bin/hubot -n jobot -a xmpp > $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log 2>&1
