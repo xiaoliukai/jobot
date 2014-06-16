@@ -23,6 +23,9 @@ export HUBOT_ADAPTER_PATH=$rootj_jobot/node_modules/
 # export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=15
 # export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_ESCALADE_HOURS=24
 # export HUDSON_TEST_MANAGER_DEFAULT_FIX_THRESHOLD_WARNING_HOURS=96
+# export OFFSET=15
+# export FACTOR=120
+
 
 # CI settings: URL of the service and select the service to be watched.
 # export HUDSON_TEST_MANAGER_URL='https://url:port'
@@ -46,4 +49,4 @@ export HUBOT_XMPP_PORT=5222
 
 cd  $rootj_jobot
 
-exec bin/hubot -n jobot -a xmpp >> $JOBOT_LOG/jobot.log 2>&1
+exec bin/hubot -n jobot -a xmpp >> $JOBOT_LOG/`date '+%D'`.log 2>&1
