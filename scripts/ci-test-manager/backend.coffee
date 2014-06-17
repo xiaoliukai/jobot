@@ -86,7 +86,9 @@ class HudsonTestManagerBackendSingleton
       unit = 'minutes'
       timeout = process.env.HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES
       factor = process.env.FACTOR
-      offset = process.env.OFFSET#Value for the offset, since it should be linked to the number of unassigned test
+      offset = process.env.OFFSET
+      console.log offset
+      #Value for the offset, since it should be linked to the number of unassigned test
       for project,projectname of storage.projects
         console.log "Looking for unassigned  tests in project #{project} since #{timeout} #{unit} (#{offset})."
         unassignedsincetest = @getFilteredTestsByDuration( @getFailedTests( project )[1], timeout, 'minutes', duration )
