@@ -65,11 +65,11 @@ module.exports = (robot) ->
 
   robot.respond /reset i18n/i, (msg) ->
 
-    dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
+    console.log dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
     for f in dir_i18n
       do  (f) ->
       #cmd  = exec " cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origine && git fetch"
-        cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origine && git fetch"
+        cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origin && git fetch"
         cmd.stdout.on 'data', (data) ->
           for line in data.toString().split('\n')
             msg.send  "#{line}"
