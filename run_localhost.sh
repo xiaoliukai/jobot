@@ -20,7 +20,7 @@ export HUBOT_XMPP_PORT=5222
 export JOBOT_LOG=/Users/sboucher/Project/jobot/log
 export OFFSET=15
 export FACTOR=120
-export I18N_WATCH_WORKDIR=.
+export I18N_WATCH_WORKDIR=./i18n
 export HUDSON="false"
 export HUDSON_TEST_MANAGER_ASSIGNMENT_TIMEOUT_IN_MINUTES=10
 rm $JOBOT_LOG/jobot.log
