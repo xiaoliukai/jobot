@@ -8,7 +8,9 @@
 #   hubot show log - Print a list of available logs.
 
 
+exec = require( 'child_process' ).exec
 fs = require 'fs'
+
 module.exports = (robot) ->
 
   robot.respond /display log( \d+)?/i, (msg) ->
@@ -43,7 +45,15 @@ module.exports = (robot) ->
     finally
       msg.send respond
 
-    robot.respond /clean log/i, (msg) ->
-      respond = "OK I will keep the last log."
-      dir_log = fs.readdirSync "#{process.env.JOBOT_LOG}"
-      
+  robot.respond /clean log/i, (msg) ->
+    msg.send "OK I will keep the last log."
+    cmd = exec './scripts/shell/log.sh'
+    cmd.stdout.on 'data', (data) ->
+      for line in data.toString().split('\n')
+        msg.send  "#{line}"
+
+    cmd.on 'exit', (code) ->
+      if code == 0
+        msg.send "Done everythings normal"
+      else
+        msg.send "Something went wrong"

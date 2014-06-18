@@ -24,3 +24,4 @@ brain-dump.json
 jobot.log
 i18n
 log
+*.conf
