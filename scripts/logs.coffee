@@ -52,6 +52,10 @@ module.exports = (robot) ->
       for line in data.toString().split('\n')
         msg.send  "#{line}"
 
+    cmd.stderr.on 'data', (data) ->
+      for line in data.toString().split('\n')
+        msg.send line
+
     cmd.on 'exit', (code) ->
       if code == 0
         msg.send "Done everythings normal"
