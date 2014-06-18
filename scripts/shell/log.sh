@@ -3,7 +3,7 @@
 # Clean up logs for jobot.  Keep both the last log and the symlink to it.
 
 source .log.conf
-cd $LOG
+cd $JOBOT_LOG
 
 for i in `/bin/ls`
   do
