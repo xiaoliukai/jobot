@@ -6,7 +6,7 @@
 #   hubot display log <n>- Print jobot logs <n> last lines of jobot.log, default 100 lines
 #   hubot display old log <n> from <%m_%d_%y> at <%H:%M> - Print the last lines of <%m_%d_%y-%H:%M>.log
 #   hubot show log - Print a list of available logs.
-
+#   hubot clean log - Delete log files, keep the last one
 
 exec = require( 'child_process' ).exec
 fs = require 'fs'
@@ -61,3 +61,12 @@ module.exports = (robot) ->
         msg.send "Done everythings normal"
       else
         msg.send "Something went wrong"
+
+
+  robot.respond /cleanup git dir/i, (msg) ->
+
+    dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
+      for f in dir_18n
+        do (f) ->
+          exec " cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origine && git fetch"
+        msg.send "Pruned #{f}"
