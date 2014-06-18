@@ -11,11 +11,11 @@ loadScripts = ->
 
   hubotScripts = Path.resolve ".", "hubot-scripts.json"
   Fs.exists hubotScripts, (exists) ->
-    if exists 
+    if exists
       Fs.readFile hubotScripts, (err, data) ->
         if data.length > 0
           try
-            scripts = JSON.parse data 
+            scripts = JSON.parse data
             scriptsPath = Path.resolve "node_modules", "hubot-scripts", "src", "scripts"
             robot.loadHubotScripts scriptsPath, scripts
           catch err

@@ -14,7 +14,8 @@ module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
     output = JSON.stringify robot.brain.data, null, 4
     console.log output
-    msg.send output
+    for line in output.split('\n')
+      msg.send line
 
   robot.respond /time$/i, (msg) ->
     output = "Server time is : " + Moment().format()
@@ -29,7 +30,8 @@ module.exports = (robot) ->
 
    robot.respond /ls$/i, (msg)->
        output = JSON.stringify robot.brain.data, null, '\t'
-       msg.send output
+       for line in output.split('\n')
+         msg.send line
 
   robot.respond /show users$/i, (msg) ->
     response = ""
