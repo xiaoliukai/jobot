@@ -159,7 +159,7 @@ class I18nWatcher
       @gitStep( absworkdir, "remote prune origin" ) ,
 
       # Pull latest changes
-      @gitStep( absworkdir, "pull" ) ,
+      @gitStep( absworkdir, "pull -p" ) ,
 
       # Check for new commites
       @gitStep( absworkdir, "log --pretty=format:\"{\\\"hash\\\":\\\"%H\\\", \\\"author\\\":\\\"%an\\\", \\\"date\\\":\\\"%ar\\\"},\" #{info.lastknowncommit}.." ),
