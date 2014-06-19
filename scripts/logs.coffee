@@ -20,7 +20,7 @@ module.exports = (robot) ->
     arr = log.toString().split('\n')
     arr =  if endline > 0 then arr[-endline..] else arr[-100..]
     respond += "#{line} \n" for line in arr
-    msg.send respond
+    msg.reply respond
 
   robot.respond /display old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
     respond = ""
@@ -33,7 +33,7 @@ module.exports = (robot) ->
       respond += "#{line} \n" for line in arr
     catch err then respond = "No such log #{err}"
     finally
-      msg.send respond
+      msg.reply respond
 
   robot.respond /show log/i, (msg) ->
     respond = "You can access the following files :\n"
@@ -43,24 +43,24 @@ module.exports = (robot) ->
       respond += "#{i++}- #{name} \n" for name in dir_log when name isnt 'jobot.log'
     catch err then respond = "oups i'll fix this #{err}"
     finally
-      msg.send respond
+      msg.reply respond
 
   robot.respond /clean log/i, (msg) ->
-    msg.send "OK I will keep the last log."
+    msg.reply "OK I will keep the last log."
     cmd = exec './scripts/shell/log.sh'
     cmd.stdout.on 'data', (data) ->
       for line in data.toString().split('\n')
-        msg.send  "#{line}"
+        msg.reply  "#{line}"
 
     cmd.stderr.on 'data', (data) ->
       for line in data.toString().split('\n')
-        msg.send line
+        msg.reply line
 
     cmd.on 'exit', (code) ->
       if code == 0
-        msg.send "Done everythings normal"
+        msg.reply "Done everythings normal"
       else
-        msg.send "Something went wrong"
+        msg.reply "Something went wrong"
 
 
   robot.respond /reset i18n/i, (msg) ->
@@ -68,14 +68,13 @@ module.exports = (robot) ->
     console.log dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
     for f in dir_i18n
       do  (f) ->
-      #cmd  = exec " cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origine && git fetch"
         cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origin && git fetch"
         cmd.stdout.on 'data', (data) ->
           for line in data.toString().split('\n')
-            msg.send  "#{line}"
+            msg.reply  "#{line}"
         cmd.stderr.on 'data', (data) ->
           for line in data.toString().split('\n')
-            msg.send  "#{line}"
+            msg.reply  "#{line}"
         cmd.on 'exit', (code) ->
           if code == 0
-            msg.send "Pruned #{f}"
+            msg.reply "Pruned #{f}"

@@ -15,23 +15,23 @@ module.exports = (robot) ->
     output = JSON.stringify robot.brain.data, null, 4
     console.log output
     for line in output.split('\n')
-      msg.send line
+      msg.reply line
 
   robot.respond /time$/i, (msg) ->
     output = "Server time is : " + Moment().format()
-    msg.send output
+    msg.reply output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->
     backup = robot.brain.data
     console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, null, 4}"
     robot.brain.data = JSON.parse( msg.match[1] )
     robot.brain.save()
-    msg.send "Done, previous brain was #{JSON.stringify backup, null, 4}"
+    msg.reply "Done, previous brain was #{JSON.stringify backup, null, 4}"
 
    robot.respond /ls$/i, (msg)->
        output = JSON.stringify robot.brain.data, null, '\t'
        for line in output.split('\n')
-         msg.send line
+         msg.reply line
 
   robot.respond /show users$/i, (msg) ->
     response = ""
@@ -40,4 +40,4 @@ module.exports = (robot) ->
       response += "id :#{user.id}, name :#{user.name}"
       response += " <#{user.email_address}>" if user.email_address
       response += "\n"
-    msg.send response
+    msg.reply response
