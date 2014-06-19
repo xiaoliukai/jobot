@@ -39,23 +39,6 @@ module.exports = (robot) ->
     robot.brain.save()
     msg.send "Done, previous brain was #{JSON.stringify backup} "
 
-   robot.respond /ls$/i, (msg)->
-     output = JSON.stringify robot.brain.data, null, '\t'
-  console.log output
-  i = 0
-  j = 0
-  arr = [""]
-  for line in output.split('\n')
-    arr[j]+="#{line} \n"
-    i++
-    console.log "Debug :  #{arr[j]}"
-    if i > 150
-      i = 0
-      arr.push ""
-      msg.send  arr[j]
-      j++
-  msg.send arr[-1..]
-
   robot.respond /show users$/i, (msg) ->
     response = ""
 
