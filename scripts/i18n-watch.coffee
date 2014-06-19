@@ -155,6 +155,9 @@ class I18nWatcher
       @gitStep( absworkdir, "reset --hard" ) ,
       @gitStep( absworkdir, "clean -f" ) ,
 
+      # Prune /remove useless references
+      @gitStep( absworkdir, "remote prune origin" ) ,
+
       # Pull latest changes
       @gitStep( absworkdir, "pull" ) ,
 
