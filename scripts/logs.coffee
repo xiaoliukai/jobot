@@ -7,7 +7,7 @@
 #   hubot display old log <n> from <%m_%d_%y> at <%H:%M> - Print the last lines of <%m_%d_%y-%H:%M>.log
 #   hubot show log - Print a list of available logs.
 #   hubot clean log - Delete log files, keep the last one
-
+#   hubot log size - Print the current size of hubot log directory.
 exec = require( 'child_process' ).exec
 fs = require 'fs'
 
