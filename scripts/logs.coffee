@@ -78,3 +78,8 @@ module.exports = (robot) ->
         cmd.on 'exit', (code) ->
           if code == 0
             msg.reply "Pruned #{f}"
+
+  robot.respond /log size/, (msg) ->
+    cmd  = exec "cd #{process.env.JOBOT_LOG} && du -hs"
+    cmd.stdout.on 'data', (data) ->
+      msg.reply  "#{data}"
