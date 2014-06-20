@@ -3,7 +3,7 @@
 #
 # Commands:
 #
-#   hubot display log <n>- Print jobot logs <n> last lines of jobot.log, default 100 lines
+#   hubot display log <n> - Print jobot logs <n> last lines of jobot.log, default 100 lines
 #   hubot display old log <n> from <%m_%d_%y> at <%H:%M> - Print the last lines of <%m_%d_%y-%H:%M>.log
 #   hubot show log - Print a list of available logs.
 #   hubot clean log - Delete log files, keep the last one
@@ -63,21 +63,21 @@ module.exports = (robot) ->
         msg.reply "Something went wrong"
 
 
-  robot.respond /reset i18n/i, (msg) ->
-
-    console.log dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
-    for f in dir_i18n
-      do  (f) ->
-        cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origin && git fetch"
-        cmd.stdout.on 'data', (data) ->
-          for line in data.toString().split('\n')
-            msg.reply  "#{line}"
-        cmd.stderr.on 'data', (data) ->
-          for line in data.toString().split('\n')
-            msg.reply  "#{line}"
-        cmd.on 'exit', (code) ->
-          if code == 0
-            msg.reply "Pruned #{f}"
+  # robot.respond /reset i18n/i, (msg) ->
+  #
+  #   console.log dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
+  #   for f in dir_i18n
+  #     do  (f) ->
+  #       cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origin && git fetch"
+  #       cmd.stdout.on 'data', (data) ->
+  #         for line in data.toString().split('\n')
+  #           msg.reply  "#{line}"
+  #       cmd.stderr.on 'data', (data) ->
+  #         for line in data.toString().split('\n')
+  #           msg.reply  "#{line}"
+  #       cmd.on 'exit', (code) ->
+  #         if code == 0
+  #           msg.reply "Pruned #{f}"
 
   robot.respond /log size/, (msg) ->
     cmd  = exec "cd #{process.env.JOBOT_LOG} && du -hs"
