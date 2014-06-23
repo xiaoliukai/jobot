@@ -35,7 +35,6 @@ module.exports = (robot) ->
     msg.reply output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->
-    #msg.envelope.user.type = 'direct'
 
     backup = robot.brain.data
     console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, null, 4}"

@@ -99,7 +99,8 @@ class I18nWatcher
         # TODO @mdarveau Remove from brain
         console.log "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
         @sendGroupChatMesssage info.room, "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
-
+        console.log info
+        storage.projects.splice(storage.projects.indexOf(info),1)
   # Storage
   persist: ( callback ) ->
     storage = @robot.brain.get 'I18nWatcher'
