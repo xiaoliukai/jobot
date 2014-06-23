@@ -3,9 +3,9 @@
 #
 # Commands:
 #
-#   hubot display log <n> - Print jobot logs <n> last lines of jobot.log, default 100 lines
-#   hubot display old log <n> from <%m_%d_%y> at <%H:%M> - Print the last lines of <%m_%d_%y-%H:%M>.log
-#   hubot show log - Print a list of available logs.
+#   hubot show log <n> - Print jobot logs <n> last lines of jobot.log, default 100 lines
+#   hubot show old log <n> from <%m_%d_%y> at <%H:%M> - Print the last lines of <%m_%d_%y-%H:%M>.log
+#   hubot list log - Print a list of available logs.
 #   hubot clean log - Delete log files, keep the last one
 #   hubot log size - Print the current size of hubot log directory.
 exec = require( 'child_process' ).exec
@@ -14,18 +14,7 @@ fs = require 'fs'
 module.exports = (robot) ->
 
 
-  robot.respond /talk to me$/i, ( msg ) ->
-  # Simply reply
-    msg.reply "Hello #{msg.envelope.user.name}. Your private JID is #{msg.envelope.user.privateChatJID}"
-
-  robot.respond /talk to me in private$/i, ( msg ) ->
-    msg.envelope =
-      user:
-        privateChatJID : msg.envelope.user.privateChatJID
-        type : 'chat'
-    msg.send  "Hey #{msg.envelope.user.name}! You told me in room #{msg.envelope.user.room} to talk to you."
-
-  robot.respond /display log( \d+)?/i, (msg) ->
+  robot.respond /show log( \d+)?/i, (msg) ->
 #    msg.envelope.user = msg.envelope.user.privateChatJid
     msg.envelope.user.type = 'chat'
     endline = msg.match[1]
@@ -37,7 +26,7 @@ module.exports = (robot) ->
     msg.reply respond
 
 
-  robot.respond /display old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
+  robot.respond /show old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
     msg.envelope.user.type = 'chat'
     respond = ""
     endline = msg.match[1]
@@ -51,7 +40,7 @@ module.exports = (robot) ->
     finally
       msg.reply respond
 
-  robot.respond /show log/i, (msg) ->
+  robot.respond /list log/i, (msg) ->
     msg.envelope.user.type = 'chat'
     respond = "You can access the following files :\n"
     i=1
