@@ -37,7 +37,6 @@ module.exports = (robot) ->
     arr =  if endline > 0 then arr[-endline..] else arr[-100..]
     respond += "#{line} \n" for line in arr
     msg.reply respond
-    #msg.envelope.user.type = 'groupchat'
 
 
   robot.respond /display old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
@@ -53,8 +52,6 @@ module.exports = (robot) ->
     catch err then respond = "No such log #{err}"
     finally
       msg.reply respond
-    msg.envelope.user.type = 'groupchat'
-
 
   robot.respond /show log/i, (msg) ->
     msg.envelope.user.type = 'chat'
@@ -66,11 +63,9 @@ module.exports = (robot) ->
     catch err then respond = "oups i'll fix this #{err}"
     finally
       msg.reply respond
-      msg.envelope.user.type = 'group'
 
 
   robot.respond /clean log/i, (msg) ->
-    msg.envelope.user.type = 'groupchat'
 
     msg.reply "OK I will keep the last log."
     cmd = exec './scripts/shell/log.sh'
@@ -87,24 +82,7 @@ module.exports = (robot) ->
         msg.reply "Done everythings normal"
       else
         msg.reply "Something went wrong"
-    msg.envelope.user.type = 'groupchat'
 
-
-  # robot.respond /reset i18n/i, (msg) ->
-  #
-  #   console.log dir_i18n = fs.readdirSync "#{process.env.I18N_WATCH_WORKDIR}"
-  #   for f in dir_i18n
-  #     do  (f) ->
-  #       cmd  = exec "cd #{process.env.I18N_WATCH_WORKDIR}/#{f} && git remote prune origin && git fetch"
-  #       cmd.stdout.on 'data', (data) ->
-  #         for line in data.toString().split('\n')
-  #           msg.reply  "#{line}"
-  #       cmd.stderr.on 'data', (data) ->
-  #         for line in data.toString().split('\n')
-  #           msg.reply  "#{line}"
-  #       cmd.on 'exit', (code) ->
-  #         if code == 0
-  #           msg.reply "Pruned #{f}"
 
   robot.respond /log size/, (msg) ->
     msg.envelope.user.type = 'chat'
