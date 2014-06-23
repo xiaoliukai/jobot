@@ -21,7 +21,7 @@ module.exports = (robot) ->
     respond = ""
     log = fs.readFileSync "#{process.env.JOBOT_LOG}/jobot.log"
     arr = log.toString().split('\n')
-    arr =  if endline > 0 then arr[-endline..] else arr[-100..]
+    arr =  if endline > 0 then arr[-endline..] else arr[-200..]
     respond += "#{line} \n" for line in arr
     msg.reply respond
 
@@ -34,7 +34,7 @@ module.exports = (robot) ->
       log = fs.readFileSync "#{process.env.JOBOT_LOG}/#{msg.match[2]}-#{msg.match[3]}.log"
       console.log log.toString()
       arr = log.toString().split('\n')
-      arr =  if endline > 0 then arr[-endline..] else arr[-100..]
+      arr =  if endline > 0 then arr[-endline..] else arr[-200..]
       respond += "#{line} \n" for line in arr
     catch err then respond = "No such log #{err}"
     finally
