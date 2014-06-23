@@ -14,15 +14,13 @@ module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
     msg.envelope.user.type = 'chat'
     output = JSON.stringify robot.brain.data, null, 4
-    console.log output
     i = 0
     j = 0
     arr = [""]
     for line in output.split('\n')
       arr[j]+="#{line} \n"
       i++
-      console.log "Debug :  #{arr[j]}"
-      if i > 150
+      if i > 200
         i = 0
         arr.push ""
         msg.send  arr[j]
