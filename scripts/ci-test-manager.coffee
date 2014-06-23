@@ -69,7 +69,7 @@ class HudsonTestManager
   # Setup "jabber" routes
   setupRoutes: ( robot ) ->
     # Tell Hubot to broadcast test results to the specified room.
-    robot.respond /check builds?/i, ( msg ) =>
+    robot.respond /check builds?/i, ( ) =>
       @backend.loop()
         # Tell Hubot to broadcast test results to the specified room.
     robot.respond routes.BROADCAST_FAILED_TESTS_FOR_PROJETS_$_TO_ROOM_$, ( msg ) =>
@@ -253,10 +253,10 @@ class HudsonTestManager
       return
     message = new Xmpp.Element( 'message', {} )
     body =  message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
-    report = ""
+
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
-      for testname, testdetail of projectdetail.failedtests
+      for  testdetail of projectdetail.failedtests
         if testdetail.assigned == user
           unless projectNamePrinted
             body.t( "Project #{projectname}:\n").c('br')
@@ -309,7 +309,7 @@ class HudsonTestManager
 
     body.t( "Test report for #{projectname}" ).c( 'br' )
     if Object.keys( fixedTests ).length != 0
-      body.t( "  Fixed test(s):" ).up().c( 'br' )
+      body.t( "  Fixed test(s):" ).c( 'br' )
       for detail in sort_util.getValuesSortedBy( fixedTests, 'name' )
         body.t( '    ' ).c( 'a', {href: detail.url} ).t( detail.name ).up()
         if detail.assigned
