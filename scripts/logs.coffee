@@ -19,8 +19,6 @@ module.exports = (robot) ->
     msg.reply "Hello #{msg.envelope.user.name}. Your private JID is #{msg.envelope.user.privateChatJID}"
 
   robot.respond /talk to me in private$/i, ( msg ) ->
-    #msg.envelope.user.type = 'chat'
-    #msg.envelope.user.privateChatJID ='sam@sboucher.usine.8d.com/jibril'
     msg.envelope =
       user:
         privateChatJID : msg.envelope.user.privateChatJID
@@ -79,7 +77,7 @@ module.exports = (robot) ->
 
     cmd.on 'exit', (code) ->
       if code == 0
-        msg.reply "Done everythings normal"
+        msg.reply "Done."
       else
         msg.reply "Something went wrong"
 
