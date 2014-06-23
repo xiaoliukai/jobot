@@ -13,7 +13,23 @@ fs = require 'fs'
 
 module.exports = (robot) ->
 
+
+  robot.respond /talk to me$/i, ( msg ) ->
+  # Simply reply
+    msg.reply "Hello #{msg.envelope.user.name}. Your private JID is #{msg.envelope.user.privateChatJID}"
+
+  robot.respond /talk to me in private$/i, ( msg ) ->
+    #msg.envelope.user.type = 'chat'
+    #msg.envelope.user.privateChatJID ='sam@sboucher.usine.8d.com/jibril'
+    msg.envelope =
+      user:
+        privateChatJID : msg.envelope.user.privateChatJID
+        type : 'chat'
+    msg.send  "Hey #{msg.envelope.user.name}! You told me in room #{msg.envelope.user.room} to talk to you."
+
   robot.respond /display log( \d+)?/i, (msg) ->
+#    msg.envelope.user = msg.envelope.user.privateChatJid
+    msg.envelope.user.type = 'chat'
     endline = msg.match[1]
     respond = ""
     log = fs.readFileSync "#{process.env.JOBOT_LOG}/jobot.log"
@@ -21,8 +37,11 @@ module.exports = (robot) ->
     arr =  if endline > 0 then arr[-endline..] else arr[-100..]
     respond += "#{line} \n" for line in arr
     msg.reply respond
+    #msg.envelope.user.type = 'groupchat'
+
 
   robot.respond /display old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
+    msg.envelope.user.type = 'chat'
     respond = ""
     endline = msg.match[1]
     try
@@ -34,8 +53,11 @@ module.exports = (robot) ->
     catch err then respond = "No such log #{err}"
     finally
       msg.reply respond
+    msg.envelope.user.type = 'groupchat'
+
 
   robot.respond /show log/i, (msg) ->
+    msg.envelope.user.type = 'chat'
     respond = "You can access the following files :\n"
     i=1
     try
@@ -44,8 +66,12 @@ module.exports = (robot) ->
     catch err then respond = "oups i'll fix this #{err}"
     finally
       msg.reply respond
+      msg.envelope.user.type = 'group'
+
 
   robot.respond /clean log/i, (msg) ->
+    msg.envelope.user.type = 'groupchat'
+
     msg.reply "OK I will keep the last log."
     cmd = exec './scripts/shell/log.sh'
     cmd.stdout.on 'data', (data) ->
@@ -61,6 +87,7 @@ module.exports = (robot) ->
         msg.reply "Done everythings normal"
       else
         msg.reply "Something went wrong"
+    msg.envelope.user.type = 'groupchat'
 
 
   # robot.respond /reset i18n/i, (msg) ->
@@ -80,6 +107,7 @@ module.exports = (robot) ->
   #           msg.reply "Pruned #{f}"
 
   robot.respond /log size/, (msg) ->
+    msg.envelope.user.type = 'chat'
     cmd  = exec "cd #{process.env.JOBOT_LOG} && du -hs"
     cmd.stdout.on 'data', (data) ->
       msg.reply  "#{data}"

@@ -280,7 +280,8 @@ class HudsonTestManager
     announcement = {}
 
     for detail in sort_util.getValuesSortedBy( unassignedTests, 'name' )
-      body.t( "  #{++testno} - " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( ' is ' ).c( 'b' ).t( 'unassigned' ).up().t( " since #{moment( detail.since ).fromNow()}" ).c( 'br' )
+      body.t( "  #{++testno} - " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( ' is ' ).c( 'b' ).t( 'unassigned' ).up()
+      body.t( " since #{moment( detail.since ).fromNow()}" ).c( 'br' )
       announcement[testno] = detail.name
 
     if includeAssignedTests
@@ -308,7 +309,7 @@ class HudsonTestManager
 
     body.t( "Test report for #{projectname}" ).c( 'br' )
     if Object.keys( fixedTests ).length != 0
-      body.t( "  Fixed test(s):" ).c( 'br' )
+      body.t( "  Fixed test(s):" ).up().c( 'br' )
       for detail in sort_util.getValuesSortedBy( fixedTests, 'name' )
         body.t( '    ' ).c( 'a', {href: detail.url} ).t( detail.name ).up()
         if detail.assigned

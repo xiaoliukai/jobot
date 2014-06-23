@@ -12,6 +12,7 @@ Moment = require 'moment'
 fs = require 'fs'
 module.exports = (robot) ->
   robot.respond /show storage$/i, (msg) ->
+    msg.envelope.user.type = 'chat'
     output = JSON.stringify robot.brain.data, null, 4
     console.log output
     i = 0
@@ -29,10 +30,13 @@ module.exports = (robot) ->
     msg.send arr[-1..]
 
   robot.respond /time$/i, (msg) ->
+    msg.envelope.user.type = 'chat'
     output = "Server time is : " + Moment().format()
     msg.reply output
 
   robot.respond /set storage ([\s\S]*)$/i, (msg) ->
+    #msg.envelope.user.type = 'direct'
+
     backup = robot.brain.data
     console.log "Swapping brain value. Backup: #{JSON.stringify robot.brain.data, null, 4}"
     robot.brain.data = JSON.parse( msg.match[1] )
@@ -40,6 +44,7 @@ module.exports = (robot) ->
     msg.send "Done, previous brain was #{JSON.stringify backup} "
 
   robot.respond /show users$/i, (msg) ->
+    msg.envelope.user.type = 'chat'
     response = ""
 
     for own key, user of robot.brain.data.users
