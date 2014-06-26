@@ -6,7 +6,7 @@ util = require 'util'
 #if HUDSON is undefined, Teamcity will be used by default.
 
 # Datastructure in brain:
-# HudsonTestManagerBackend
+# CITestManagerBackend
 #   projects[projectname]
 #     room: backoffice
 #     manager: mdarveau@jabber.8d.com
@@ -32,14 +32,14 @@ util = require 'util'
 #  buildfailed: project, buildname, url
 #
 
-class HudsonTestManagerBackendSingleton
+class CITestManagerBackendSingleton
 
   instance = null
 
   @get: ( robot, hudson ) ->
-    instance ?= new HudsonTestManagerBackend( robot, hudson )
+    instance ?= new CITestManagerBackend( robot, hudson )
 
-  class HudsonTestManagerBackend extends EventEmitter
+  class CITestManagerBackend extends EventEmitter
 
     constructor: ( robot, hudson ) ->
       @robot = robot
@@ -51,17 +51,17 @@ class HudsonTestManagerBackendSingleton
 
     # private
     persist: ( callback ) ->
-      storage = @robot.brain.get 'HudsonTestManagerBackend'
+      storage = @robot.brain.get 'CITestManagerBackend'
       storage?={}
       storage.projects?={}
       callback( storage )
-      @robot.brain.set 'HudsonTestManagerBackend', storage
+      @robot.brain.set 'CITestManagerBackend', storage
       @robot.brain.save()
-    # console.log "Brain: " + util.inspect(@robot.brain.get 'HudsonTestManagerBackend')
+    # console.log "Brain: " + util.inspect(@robot.brain.get 'CITestManagerBackend')
 
     # private
     readstorage: () ->
-      storage = @robot.brain.get 'HudsonTestManagerBackend'
+      storage = @robot.brain.get 'CITestManagerBackend'
       storage?={}
       storage.projects?={}
       return storage
@@ -334,4 +334,4 @@ class HudsonTestManagerBackendSingleton
       return assignedtests
 
 module.exports = ( robot, hudson ) ->
-  HudsonTestManagerBackendSingleton.get( robot, hudson )
+  CITestManagerBackendSingleton.get( robot, hudson )

@@ -1,4 +1,4 @@
-class HudsonTestManagerRoutes
+class CITestManagerRoutes
 
   # Constants for "routes"
   #TODO add cases for notify
@@ -13,4 +13,4 @@ class HudsonTestManagerRoutes
   @SHOW_TEST_REPORT_FOR_PROJECT_$ = /Show test (?:report )?(?:for )?(?:project )?(\S*)/i
   @SHOW_UNASSIGNED_TEST_FOR_PROJECT_$ = /Show unassigned tests? for (?:project )?(\S*)/i
   @UPGRADE_YOURSELF=/upgrade yourself/i
-module.exports = HudsonTestManagerRoutes
+module.exports = CITestManagerRoutes

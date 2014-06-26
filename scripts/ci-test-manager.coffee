@@ -40,7 +40,7 @@ CIConnection =  if process.env.HUDSON=='true' then require( './ci-test-manager/h
 routes = require( './ci-test-manager/routes' )
 test_manager_util = require( './ci-test-manager/test_string_parser' )
 
-class HudsonTestManager
+class CITestManager
 
   constructor: ( @robot, @backend ) ->
     unless process.env.HUDSON_TEST_MANAGER_URL or process.env.TEAMCITY_TEST_MANAGER_URL
@@ -399,4 +399,4 @@ class HudsonTestManager
     @robot.send( envelope, message )
 
 module.exports = ( robot, backend ) ->
-  new HudsonTestManager( robot, backend )
+  new CITestManager( robot, backend )
