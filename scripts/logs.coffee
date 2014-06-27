@@ -1,4 +1,4 @@
-send Description:
+# Description:
 #  Display log for jobot
 #
 # Commands:
