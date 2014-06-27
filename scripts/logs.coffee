@@ -1,4 +1,4 @@
-# Description:
+send Description:
 #  Display log for jobot
 #
 # Commands:
@@ -59,11 +59,11 @@ module.exports = (robot) ->
     cmd = exec './scripts/shell/log.sh'
     cmd.stdout.on 'data', (data) ->
       for line in data.toString().split('\n')
-        msg.reply  "#{line}"
+        msg.send  "#{line}"
 
     cmd.stderr.on 'data', (data) ->
       for line in data.toString().split('\n')
-        msg.reply line
+        msg.send line
 
     cmd.on 'exit', (code) ->
       if code == 0
