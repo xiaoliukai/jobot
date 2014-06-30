@@ -24,7 +24,7 @@ module.exports = (robot) ->
     arr = log.toString().split('\n')
     arr =  if endline > 0 then arr[-endline..] else arr[-200..]
     respond += "#{line} \n" for line in arr
-    msg.reply respond
+    msg.send respond
 
 
   robot.respond /show old log( \d+)? from (\d\d_\d\d_\d\d) at (\d\d:\d\d)/i, (msg) ->
@@ -39,7 +39,7 @@ module.exports = (robot) ->
       respond += "#{line} \n" for line in arr
     catch err then respond = "No such log #{err}"
     finally
-      msg.reply respond
+      msg.send respond
 
   robot.respond /list log/i, (msg) ->
     msg.envelope.user.type = 'chat'
@@ -50,7 +50,7 @@ module.exports = (robot) ->
       respond += "#{i++}- #{name} \n" for name in dir_log when name isnt 'jobot.log'
     catch err then respond = "oups i'll fix this #{err}"
     finally
-      msg.reply respond
+      msg.send respond
 
 
   robot.respond /clean log/i, (msg) ->
@@ -67,13 +67,13 @@ module.exports = (robot) ->
 
     cmd.on 'exit', (code) ->
       if code == 0
-        msg.reply "Done."
+        msg.send "Done."
       else
-        msg.reply "Something went wrong"
+        msg.send "Something went wrong"
 
 
   robot.respond /log size/, (msg) ->
     msg.envelope.user.type = 'chat'
     cmd  = exec "cd #{process.env.JOBOT_LOG} && du -hs"
     cmd.stdout.on 'data', (data) ->
-      msg.reply  "#{data}"
+      msg.send  "#{data}"
