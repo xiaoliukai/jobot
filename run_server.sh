@@ -1,15 +1,15 @@
 #!/bin/sh
-
+export BOT=jobot
 export JAVA_HOME=/usr/local/jvm/latest7
 export M2_HOME=/data/cloud/apache-maven-jobot
 export PATH="$rootj_jobot/node_modules/.bin:$rootj_jobot/node_modules/hubot/node_modules/.bin:$PATH"
 export PATH=$PATH:$M2_HOME/bin:$JAVA_HOME:/usr/local/bin
 
-export rootj=/data/cloud/jobot
-export rootj_jobot=$rootj/jobot
+export rootj=/data/cloud/$BOT
+export rootj_jobot=$rootj/$BOT
 export FILE_BRAIN_PATH=$rootj/data
 export I18N_WATCH_WORKDIR=$rootj/data/i18nwatch
-export JOBOT_LOG=$rootj/log
+export BOT_LOG=$rootj/log
 
 
 
@@ -48,7 +48,7 @@ export HUBOT_XMPP_HOST=$JABBER_DOMAIN
 export HUBOT_XMPP_PORT=5222
 
 cd  $rootj_jobot
-rm $JOBOT_LOG/jobot.log
-touch  $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log
-ln -s  $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log $JOBOT_LOG/jobot.log
-exec bin/hubot -n jobot -a xmpp > $JOBOT_LOG/`date '+%m_%d_%y-%H:%M'`.log 2>&1
+rm $BOT_LOG/jobot.log
+touch  $BOT_LOG/`date '+%m_%d_%y-%H:%M'`.log
+ln -s  $BOT_LOG/`date '+%m_%d_%y-%H:%M'`.log $BOT_LOG/jobot.log
+exec bin/hubot -n jobot -a xmpp > $BOT_LOG/`date '+%m_%d_%y-%H:%M'`.log 2>&1
