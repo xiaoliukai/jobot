@@ -1,5 +1,5 @@
 # Description:
-#  Display log for jobot
+#  Display log for #{process.env.BOT}
 #
 # Commands:
 #
@@ -20,7 +20,7 @@ module.exports = (robot) ->
     msg.envelope.user.type = 'chat'
     endline = msg.match[1]
     respond = ""
-    log = fs.readFileSync "#{process.env.JOBOT_LOG}/jobot.log"
+    log = fs.readFileSync "#{process.env.BOT_LOG}/#{process.env.BOT}.log"
     arr = log.toString().split('\n')
     arr =  if endline > 0 then arr[-endline..] else arr[-200..]
     respond += "#{line} \n" for line in arr
@@ -32,7 +32,7 @@ module.exports = (robot) ->
     respond = ""
     endline = msg.match[1]
     try
-      log = fs.readFileSync "#{process.env.JOBOT_LOG}/#{msg.match[2]}-#{msg.match[3]}.log"
+      log = fs.readFileSync "#{process.env.BOT_LOG}/#{msg.match[2]}-#{msg.match[3]}.log"
       console.log log.toString()
       arr = log.toString().split('\n')
       arr =  if endline > 0 then arr[-endline..] else arr[-200..]
@@ -46,8 +46,8 @@ module.exports = (robot) ->
     respond = "You can access the following files :\n"
     i=1
     try
-      dir_log = fs.readdirSync "#{process.env.JOBOT_LOG}"
-      respond += "#{i++}- #{name} \n" for name in dir_log when name isnt 'jobot.log'
+      dir_log = fs.readdirSync "#{process.env.BOT_LOG}"
+      respond += "#{i++}- #{name} \n" for name in dir_log when name isnt '#{process.env.BOT}.log'
     catch err then respond = "oups i'll fix this #{err}"
     finally
       msg.send respond
@@ -74,6 +74,6 @@ module.exports = (robot) ->
 
   robot.respond /log size/, (msg) ->
     msg.envelope.user.type = 'chat'
-    cmd  = exec "cd #{process.env.JOBOT_LOG} && du -hs"
+    cmd  = exec "cd #{process.env.BOT_LOG} && du -hs"
     cmd.stdout.on 'data', (data) ->
       msg.send  "#{data}"
