@@ -292,7 +292,7 @@ class CITestManager
   #
   buildTestReport: ( project, failedTests, unassignedTests, assignedTests, includeAssignedTests ) ->
     if Object.keys( failedTests ).length == 0
-      return [ "No test fail", {} ]
+      return [ "Test report for #{project}\nNo test fail", {} ]
 
     message = new Xmpp.Element( 'message', {} )
     body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
