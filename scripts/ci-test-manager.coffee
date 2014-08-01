@@ -25,6 +25,7 @@
 #   hubot Assign {1 | 1-4 | 1, 3 | com.eightd.some.test} (of project {}) to {me | someuser} - Assign a test/range/list of tests to a user
 #   hubot Show test (report for project) {}
 #   hubot Show unassigned tests for (project) {}
+#   hubot test report
 #
 # Notes:
 #   This plugin support multiple build for a project. This is usefull if multiple builds are working on the same project
@@ -97,6 +98,9 @@ class CITestManager
     # Assign a test/range/list of tests to a user
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       @handleAssignTest msg
+
+    robot.respond routes.TEST_REPORT, (msg) =>
+      @handleShowTestsReport msg
 
     # Display tests assigned to requesting user
     robot.respond routes.SHOW_TEST_ASSIGNED_TO_ME, ( msg ) =>
@@ -221,6 +225,24 @@ class CITestManager
       else
         console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
+
+  handleShowTestsReport : ( msg ) ->
+    unless @backend.getProjects()
+      msg.send "Sorry, I do not know any projects"
+      return
+    for projectname, projectvalue of @backend.getProjects()
+      [failedTests, unassignedTests, assignedTests] = @backend.getFailedTests projectname
+      [report, announcement] = @buildTestReport( projectname, failedTests, unassignedTests, assignedTests, true )
+      msg.send report
+
+    # Only store announcement if sent to a room and it's the project room
+    # if msg.envelope.user.type == 'groupchat'
+    #   # Check if the room where the message was sent is the room for the project. If not, do not storeAnnouncement
+    #   projectRoomName = @backend.getBroadcastRoomForProject projectname
+    #   if msg.envelope.user.room == projectRoomName
+    #     @storeAnnouncement projectRoomName, projectname, announcement
+    #   else
+    #     console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
   #
   # Call back with the unassigned test report and store annoucement if sent to a room.
   #

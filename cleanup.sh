@@ -10,3 +10,4 @@ for i in `/bin/ls`
       rm $i
     fi
   done
+srv -t jobot
