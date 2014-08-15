@@ -10,4 +10,4 @@ for i in `/bin/ls`
       rm $i
     fi
   done
-srv -t jobot
+kill -9 $PPID

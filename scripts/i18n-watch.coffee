@@ -9,7 +9,7 @@
 #   process.env.I18N_WATCH_WORKDIR: The working directory for git clone
 #
 # Commands:
-#   hubot Watch translations on git repo {git url} branch {branch name} and broadcast to room {full room name}
+#   hubot Watch translations on git repo {git url} branch {branch name} jvm {7|8} and broadcast to room {full room name}
 #
 # Author:
 #   Manuel Darveau
@@ -39,10 +39,11 @@ class I18nWatcher
     setInterval( @.loop, 1 * 60 * 1000 ) unless skipStart
 
     # Tell Hubot to broadcast extract results to the specified room.
-    robot.respond /Watch translations on git repo (\S*) branch (\S*) and broadcast to room (\S*)/i, ( msg ) =>
+    robot.respond /Watch translations on git repo (\S*) branch (\S*) jvm (7|8) and broadcast to room (\S*)/i, ( msg ) =>
       repoURL = msg.match[1]
       branch = msg.match[2]
-      room = msg.match[3]
+      room = msg.match[4]
+      jvm = msg.match[3]
 
       unless repoURL
         msg.reply( "You must specify a repo url" )
@@ -52,19 +53,21 @@ class I18nWatcher
         msg.reply( "You must specify a branch" )
         return
 
-      @watchProject repoURL, branch, room, ( message )->
+      @watchProject repoURL, branch, room, jvm, ( message )->
         msg.send message
 
   loop: () =>
     # Check for new commits
     @checkForChanges()
 
-  watchProject: ( repoURL, branch, room, replyHandler ) ->
+  watchProject: ( repoURL, branch, room, jvm, replyHandler ) ->
+    javahome = "/usr/local/jvm/latest#{jvm}"
     info =
       giturl: repoURL
       branch: branch
       workdir: Math.random().toString( 36 ).substring( 10 )
       room: room
+      jvm : javahome
 
     try
       replyHandler( "Cloning..." )
@@ -179,7 +182,7 @@ class I18nWatcher
         console.log "New commit for #{info.giturl} branch #{info.branch}. Last commit is '#{latesthash}', previous last known was '#{info.lastknowncommit}'"
 
         # Call maven to extract i18n keys
-        command = "mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
+        command = "export JAVA_HOME=#{info.jvm} && mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
         console.log command
         exec command,
           timeout: 10 * 60 * 1000 # 10 minutes
