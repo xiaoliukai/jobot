@@ -281,6 +281,8 @@ class CITestManager
       projectNamePrinted = false
       for  testdetail, value of projectdetail.failedtests
         if value.assigned is user
+          console.log testdetail
+          console.log value.assigned
           unless projectNamePrinted
             body.t( "Project #{projectname}:\n").c('br')
             body.c('a',{href: value.url}).t(" #{value.name} since #{moment( value.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
