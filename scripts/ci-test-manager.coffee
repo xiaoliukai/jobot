@@ -99,7 +99,7 @@ class CITestManager
     robot.respond routes.ASSIGN_TESTS_OF_PROJECT_$_TO_$_OR_ME, ( msg ) =>
       @handleAssignTest msg
 
-    robot.respond routes.TEST_REPORT, (msg) =>
+    robot.respond routes.TEST_REPORT, ( msg ) =>
       @handleShowTestsReport msg
 
     # Display tests assigned to requesting user
@@ -268,7 +268,9 @@ class CITestManager
   #
   # Return tests assigned to requesting user
   #
+
   handleShowTestAssignedToMe: ( msg ) ->
+    console.log "Assigned to me"
     user = msg.envelope.user.privateChatJID
     unless user
       msg.reply "Sorry, I do not know you :-P"
