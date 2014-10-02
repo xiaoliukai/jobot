@@ -284,15 +284,16 @@ class CITestManager
       # console.log projectNamePrinted
       for  testdetail, value of projectdetail.failedtests
         console.log testdetail
+        console.log JSON.stringify  value , null, 4 
         # console.log JSON.stringify testdetail, null, 4
         # console.log user
         # console.log testdetail.assigned
-        if projectdetail.failedtests.assigned is user
+        if value.assigned is user
           console.log "Object OK !"
           unless projectNamePrinted
             console.log "ProjectNamePrinted = false"
             body.t( "Project #{projectname}:\n").c('br')
-            body.c('a',{href: testdetail.url}).t(" #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
+            body.c('a',{href: value.url}).t(" #{value.name} since #{moment( value.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
 
     msg.send message
 
