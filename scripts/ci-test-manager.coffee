@@ -282,12 +282,13 @@ class CITestManager
       projectNamePrinted = false
       console.log JSON.stringify projectdetail.failedtests, null, 4
       # console.log projectNamePrinted
-      for  testdetail of projectdetail.failedtests
+      for  testdetail, value of projectdetail.failedtests
         console.log testdetail
         # console.log JSON.stringify testdetail, null, 4
         # console.log user
         # console.log testdetail.assigned
-        if testdetail.assigned is user
+        if projectdetail.failedtests.assigned is user
+          console.log "Object OK !"
           unless projectNamePrinted
             console.log "ProjectNamePrinted = false"
             body.t( "Project #{projectname}:\n").c('br')
