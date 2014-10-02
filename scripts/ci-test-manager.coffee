@@ -284,7 +284,7 @@ class CITestManager
         if value.assigned is user
           unless projectNamePrinted
             body.t( "Project #{projectname}:\n").c('br')
-            body.c('a',{href: value.url}).t(" #{value.name} since #{moment( value.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted is true
+            body.c('a',{href: value.url}).t(" #{value.name} since #{moment( value.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
 
     msg.send message
 
