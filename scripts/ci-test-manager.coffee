@@ -277,12 +277,13 @@ class CITestManager
       return
     message = new Xmpp.Element( 'message', {} )
     body =  message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
-
+    console.log "Body created"
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
       for  testdetail of projectdetail.failedtests
-        if testdetail.assigned == user
+        if testdetail.assigned is user
           unless projectNamePrinted
+            console.log "ProjectNamePrinted = false"
             body.t( "Project #{projectname}:\n").c('br')
             body.c('a',{href: testdetail.url}).t(" #{testdetail.name} since #{moment( testdetail.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
 
