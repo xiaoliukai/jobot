@@ -280,7 +280,7 @@ class CITestManager
     console.log "Body created"
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
-      console.log JSON.stringify projectdetail, null, 4
+      console.log JSON.stringify projectdetail.failedtests, null, 4
       # console.log projectNamePrinted
       for  testdetail of projectdetail.failedtests
         console.log testdetail
