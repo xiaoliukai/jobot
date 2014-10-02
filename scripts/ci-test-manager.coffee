@@ -277,7 +277,6 @@ class CITestManager
       return
     message = new Xmpp.Element( 'message', {} )
     body =  message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
-    console.log "Body created"
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
       for  testdetail, value of projectdetail.failedtests
