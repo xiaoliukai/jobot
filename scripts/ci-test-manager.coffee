@@ -280,12 +280,13 @@ class CITestManager
     console.log "Body created"
     for projectname, projectdetail of @backend.getProjects()
       projectNamePrinted = false
-      console.log projectNamePrinted
+      console.log JSON.stringify projectdetail, null, 4
+      # console.log projectNamePrinted
       for  testdetail of projectdetail.failedtests
         console.log testdetail
         # console.log JSON.stringify testdetail, null, 4
-        console.log user
-        console.log testdetail.assigned
+        # console.log user
+        # console.log testdetail.assigned
         if testdetail.assigned is user
           unless projectNamePrinted
             console.log "ProjectNamePrinted = false"
