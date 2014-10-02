@@ -282,7 +282,8 @@ class CITestManager
       projectNamePrinted = false
       console.log projectNamePrinted
       for  testdetail of projectdetail.failedtests
-        console.log JSON.stringify testdetail, null, 4
+        console.log testdetail
+        # console.log JSON.stringify testdetail, null, 4
         console.log user
         console.log testdetail.assigned
         if testdetail.assigned is user
