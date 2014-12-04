@@ -182,8 +182,8 @@ class I18nWatcher
 
         console.log "New commit for #{info.giturl} branch #{info.branch}. Last commit is '#{latesthash}', previous last known was '#{info.lastknowncommit}'"
 
-        # Call maven to extract i18n keys    MaxMetaspaceSize
-        maven_opts = '"-Xms512m -Xmx768m -XX:MaxMetaspaceSize=512M"'
+        # Call maven to extract i18n keys
+        maven_opts = '"-Xms256m -Xmx512m -XX:MaxMetaspaceSize=512M"'
         command = "export JAVA_HOME=#{info.jvm} && export MAVEN_OPTS=#{maven_opts} && mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
         console.log command
         exec command,
