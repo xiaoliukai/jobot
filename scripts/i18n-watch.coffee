@@ -85,25 +85,26 @@ class I18nWatcher
     console.log "Looking for untranslated keys..."
     storage = @readstorage()
     for info in storage.projects
-      absworkdir = path.join @rootworkdir, info.workdir
-      if fs.existsSync absworkdir
-        console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
-        @processProject info, ( err, info ) =>
-          if err
-            @sendGroupChatMesssage info.room, "Error checking for i18n on #{info.branch} see log"
-            console.log err
-          else
-            return if info.untranslatedKeys.length == 0
-            message = "Untranslated keys for #{info.giturl}/#{info.branch}:\n"
-            for key in info.untranslatedKeys
-              message += "  - #{key}\n"
-            @sendGroupChatMesssage info.room, message
-      else
-        # TODO @mdarveau Remove from brain
-        console.log "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
-        @sendGroupChatMesssage info.room, "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
-        console.log info
-        storage.projects.splice(storage.projects.indexOf(info),1)
+      do (info) ->
+        absworkdir = path.join @rootworkdir, info.workdir
+        if fs.existsSync absworkdir
+          console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
+          @processProject info, ( err, info ) =>
+            if err
+              @sendGroupChatMesssage info.room, "Error checking for i18n on #{info.branch} see log"
+              console.log err
+            else
+              return if info.untranslatedKeys.length == 0
+              message = "Untranslated keys for #{info.giturl}/#{info.branch}:\n"
+              for key in info.untranslatedKeys
+                message += "  - #{key}\n"
+              @sendGroupChatMesssage info.room, message
+        else
+          # TODO @mdarveau Remove from brain
+          console.log "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
+          @sendGroupChatMesssage info.room, "Working directory '#{absworkdir}' does not exists. Removing watch for #{info.giturl} branch #{info.branch}"
+          console.log info
+          storage.projects.splice(storage.projects.indexOf(info),1)
   # Storage
   persist: ( callback ) ->
     storage = @robot.brain.get 'I18nWatcher'
@@ -181,7 +182,7 @@ class I18nWatcher
 
         console.log "New commit for #{info.giturl} branch #{info.branch}. Last commit is '#{latesthash}', previous last known was '#{info.lastknowncommit}'"
 
-        # Call maven to extract i18n keys
+        # Call maven to extract i18n keys    MaxMetaspaceSize
         maven_opts = '"-Xms512m -Xmx768m -XX:MaxMetaspaceSize=512M"'
         command = "export JAVA_HOME=#{info.jvm} && export MAVEN_OPTS=#{maven_opts} && mvn -f #{absworkdir}/pom.xml -pl ftk-i18n-extract -am -P i18n-xliff-extract clean compile process-resources"
         console.log command
@@ -208,13 +209,14 @@ class I18nWatcher
         # store info
         @persist ( storage ) =>
           for storageinfo in storage.projects
-            if storageinfo.giturl == info.giturl and storageinfo.branch == info.branch
-              console.log "Storing latest hash '#{latesthash}' for #{info.giturl} branch #{info.branch}"
-              storageinfo.lastknowncommit = latesthash
-              storageinfo.untranslatedKeys = untranslatedKeys
-              delete @workdirlocks[info.workdir]
-              callback null, storageinfo
-              return
+            do (storageinfo) ->
+              if storageinfo.giturl == info.giturl and storageinfo.branch == info.branch
+                console.log "Storing latest hash '#{latesthash}' for #{info.giturl} branch #{info.branch}"
+                storageinfo.lastknowncommit = latesthash
+                storageinfo.untranslatedKeys = untranslatedKeys
+                delete @workdirlocks[info.workdir]
+                callback null, storageinfo
+                return
 
   cloneRepo: ( info, callback ) ->
     absworkdir = path.join @rootworkdir, info.workdir
