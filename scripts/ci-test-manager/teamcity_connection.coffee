@@ -1,4 +1,5 @@
-# Most method accept a jsonCallback with signature (err, response as json object)
+# Most method accept a jsonCallback
+# with signature (err, response as json object)
 
 inspect = require( 'eyes' ).inspector( {maxLength: false} )
 
@@ -23,7 +24,8 @@ class TeamcityConnection
       req.auth( login.teamcity.user, login.teamcity.password )
       req.header( 'Accept', 'application/json' )
     catch err
-      console.log "There was an error do not forget to create a file auth.json with the apropriate credentials : #{err}"
+      console.log "There was an error do not forget to create a file auth.json
+      with the apropriate credentials : #{err}"
       process.exit( 1 )
 
     return req
@@ -73,8 +75,10 @@ class TeamcityConnection
   # .url: http://...
   # .culprits: [{fullName:}]
   getBuildStatus: ( jobName, http, jsonCallback ) ->
-    #  see ForProject Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
-    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},running:false,count:1" )
+    #  see ForProject Document that when a specific project should be used,
+    # the branch should be "$branch_name,project:$project_name
+    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/
+                            ?locator=branch:#{jobName},running:false,count:1" )
 
     builder = ( res ) ->
 
@@ -92,8 +96,11 @@ class TeamcityConnection
     return
 
   getBuildStatusForProject: ( projectName, jobName, http, jsonCallback ) ->
-    #  Document that when a specific project should be used, the branch should be "$branch_name,project:$project_name
-    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/?locator=branch:#{jobName},project:#{projectName},running:false,count:1" )
+    #  Document that when a specific project should be used,
+    #  the branch should be "$branch_name,project:$project_name
+    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/builds/
+                              ?locator=branch:#{jobName},project:#{projectName}
+                              ,running:false,count:1" )
     #console.log JSON.stringify req, null , 4
     builder = ( res ) ->
       # console.log "res :\n " + JSON.stringify res,null, 4
@@ -121,19 +128,24 @@ class TeamcityConnection
 
   getTestReport: ( jobName, buildnumber, http, jsonCallback ) ->
     teamcity_url = @teamcity_url
-    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest/testOccurrences?locator=build:#{buildnumber},count:9999,status:FAILURE" )
+    req = @authRequest( http, "#{@teamcity_url}/httpAuth/app/rest
+                              /testOccurrences?locator=build:#{buildnumber},
+                              :9999,status:FAILURE" )
     builder = ( res ) ->
       result = {}
       result.jobName = jobName
 
       # Get failed tests
       result.failedTests = {}
-      for testcase in res.testOccurrence
-        unless   testcase.currentlyMuted is true        
-          className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
+      for testcase in res.testOccurrence or 0
+        unless   testcase.currentlyMuted is true
+          className = testcase
+                      .name
+                      .substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
             name: className
-            url: "#{teamcity_url}/viewLog.html?buildId=#{buildnumber}&tab=buildResultsDiv"
+            url: "#{teamcity_url}/viewLog.html?buildId
+                  =#{buildnumber}&tab=buildResultsDiv"
 
         console.log "Failed test : " + result.failedTests
 
