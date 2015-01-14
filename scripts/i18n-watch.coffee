@@ -59,6 +59,7 @@ class I18nWatcher
 
   loop: () =>
     # Check for new commits
+    console.log ("Test!")
     @checkForChanges()
 
   watchProject: ( repoURL, branch, room, jvm, replyHandler ) ->
