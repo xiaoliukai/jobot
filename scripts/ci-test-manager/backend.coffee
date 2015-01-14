@@ -132,8 +132,10 @@ class CITestManagerBackendSingleton
     parseBuildResult: ( projectname, buildname, lastbuilddetail, buildresult ) ->
       # Check if we have a new build and persist if not
       if buildresult.number is lastbuilddetail.lastbuildnumber
-        console.log "Last build of #{projectname}/#{buildname} is still #{buildresult.number}"
-        @emit 'buildfailed', projectname, buildname, buildresult.url if buildresult.result  is 'FAILURE'
+        @robot.logger.info "Last build of #{projectname}/#{buildname} is still #{buildresult.number}"
+        @robot.logger.info buildresult.result
+        if buildresult.result  is 'FAILURE'
+          @emit 'buildfailed', projectname, buildname, buildresult.url
         return
 
       console.log "Status of #{projectname}/#{buildname} is #{buildresult.result}"
