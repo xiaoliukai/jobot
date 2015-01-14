@@ -62,7 +62,7 @@ class CITestManager
     @backend.on 'testresult', @.processNewTestResult
     @backend.on 'testunassigned', @.notifyUnassignedTest
     @backend.on 'teststillfail', @.notifyTestStillFail
-    @backend.on 'buildfaild', @.notifyBuildFailed
+    @backend.on 'buildfailed', @.notifyBuildFailed
     @backend.on 'err', ( err ) =>
       @robot.logger.error "Error in backend: #{err}"
 
