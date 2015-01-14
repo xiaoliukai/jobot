@@ -87,7 +87,7 @@ class I18nWatcher
     console.log "Looking for untranslated keys..."
     storage = @readstorage()
     for info in storage.projects
-      do (info) ->
+      do (info) =>
         absworkdir = path.join @rootworkdir, info.workdir
         if fs.existsSync absworkdir
           console.log "  for #{info.giturl} branch #{info.branch} in directory #{info.workdir}"
@@ -211,7 +211,7 @@ class I18nWatcher
         # store info
         @persist ( storage ) =>
           for storageinfo in storage.projects
-            do (storageinfo) ->
+            do (storageinfo) =>
               if storageinfo.giturl == info.giturl and storageinfo.branch == info.branch
                 console.log "Storing latest hash '#{latesthash}' for #{info.giturl} branch #{info.branch}"
                 storageinfo.lastknowncommit = latesthash
