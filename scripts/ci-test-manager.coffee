@@ -37,7 +37,7 @@
 moment = require 'moment'
 Xmpp = require 'node-xmpp'
 sort_util = require './util/sort_util'
-CIConnection =  if process.env.HUDSON=='true' then require( './ci-test-manager/hudson_connection' ) else require('./ci-test-manager/teamcity_connection')
+CIConnection =  if process.env.HUDSON is 'true' then require( './ci-test-manager/hudson_connection' ) else require('./ci-test-manager/teamcity_connection')
 routes = require( './ci-test-manager/routes' )
 test_manager_util = require( './ci-test-manager/test_string_parser' )
 
@@ -62,6 +62,7 @@ class CITestManager
     @backend.on 'testresult', @.processNewTestResult
     @backend.on 'testunassigned', @.notifyUnassignedTest
     @backend.on 'teststillfail', @.notifyTestStillFail
+    @backend.on 'buildfaild', @.notifyBuildFailed
     @backend.on 'err', ( err ) =>
       console.log "Error in backend: #{err}"
 
@@ -407,6 +408,13 @@ class CITestManager
          body.t( " This test still fails : " ).c( 'a', {href: detail.url} ).t( detail.name ).up().t( "it was assigned to #{detail.assigned} since #{moment( detail.assignedDate ).fromNow()}" ).c( 'br' )
          @sendPrivateMesssage(detail.assigned, message) unless detail.notifiedmanager
          storage.projects[project].failedtests[testname].notifiedmanager = true
+
+  notifyBuildFailed: (projectname, buildname, url) =>
+    message = new Xmpp.Element( 'message', {} )
+    body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
+    body.t( " This build failed : " ).c( 'a', {href: url} ).t( buildname ).up().t( " for project #{projectname}" ).c( 'br' )
+    roomname = @getBroadcastRoomForProject(projectname)
+    @sendGroupChatMesssage(roomname, message)
 
 
   sendPrivateMesssage: ( to_jid, message ) ->
