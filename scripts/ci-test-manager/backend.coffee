@@ -133,7 +133,7 @@ class CITestManagerBackendSingleton
       # Check if we have a new build and persist if not
       if buildresult.number is lastbuilddetail.lastbuildnumber
         @robot.logger.info "Last build of #{projectname}/#{buildname} is still #{buildresult.number}"
-        @robot.logger.info buildresult.result
+        @robot.logger.info buildresult.result, buildresult.url
         if buildresult.result  is 'FAILURE'
           @emit 'buildfailed', projectname, buildname, buildresult.url
         return
