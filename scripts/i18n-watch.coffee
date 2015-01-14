@@ -28,6 +28,7 @@ class I18nWatcher
   constructor: ( @robot, skipStart ) ->
     @state = {}
     @workdirlocks = {}
+    @robot.logger.info "I18Watcher Loaded"
 
     unless process.env.I18N_WATCH_WORKDIR
       @robot.logger.error 'I18N_WATCH_WORKDIR not set'
@@ -36,8 +37,8 @@ class I18nWatcher
     @rootworkdir = process.env.I18N_WATCH_WORKDIR
     fs.mkdirSync @rootworkdir unless fs.existsSync @rootworkdir
 
-    setInterval( @.loop, 1 * 60 * 1000 ) unless skipStart
-
+    setInterval( @.loop, 1 * 60 * 1000 ) # unless skipStart
+#
     # Tell Hubot to broadcast extract results to the specified room.
     robot.respond /Watch translations on git repo (\S*) branch (\S*) jvm (7|8) and broadcast to room (\S*)/i, ( msg ) =>
       repoURL = msg.match[1]
