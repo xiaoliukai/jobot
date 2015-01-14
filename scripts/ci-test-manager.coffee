@@ -52,7 +52,7 @@ class CITestManager
     @state = {}
 
     @hudson = new CIConnection( if process.env.HUDSON=='true' then process.env.HUDSON_TEST_MANAGER_URL else process.env.TEAMCITY_TEST_MANAGER_URL )
-    console.log @hudson, process.env.HUDSON
+    @robot.logger.error @hudson, process.env.HUDSON
     @backend = require( './ci-test-manager/backend' )( @robot, @hudson ) unless @backend
 
     # Setup "routes":
@@ -64,7 +64,7 @@ class CITestManager
     @backend.on 'teststillfail', @.notifyTestStillFail
     @backend.on 'buildfaild', @.notifyBuildFailed
     @backend.on 'err', ( err ) =>
-      console.log "Error in backend: #{err}"
+      @robot.logger.error "Error in backend: #{err}"
 
     @backend.start()
 
@@ -201,7 +201,7 @@ class CITestManager
       msg.reply( "Ack. Tests assigned to #{user.split( '@' )[0]}" )
 
     catch err
-      console.log "Error in assign test '#{testsString}': #{err}"
+      @robot.logger.error "Error in assign test '#{testsString}': #{err}"
       msg.reply( "Sorry, I don't understand which tests you would like to get assigned (got '#{testsString}'). Tell me something like: 1, 2-5, com.some.Test. (err:#{err})" )
 
   #
@@ -224,7 +224,7 @@ class CITestManager
       if msg.envelope.user.room == projectRoomName
         @storeAnnouncement projectRoomName, projectname, announcement
       else
-        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
+        @robot.logger.info "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
 
   handleShowTestsReport : ( msg ) ->
@@ -264,14 +264,14 @@ class CITestManager
       if msg.envelope.user.room == projectRoomName
         @storeAnnouncement projectRoomName, projectname, announcement
       else
-        console.log "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
+        robot.logger.info "Will not store announcement since 'show test report' command was received in #{msg.envelope.user.room} while the room for the project is #{projectRoomName}"
 
   #
   # Return tests assigned to requesting user
   #
 
   handleShowTestAssignedToMe: ( msg ) ->
-    console.log "Assigned to me"
+    @robot.logger.info "Assigned to me"
     user = msg.envelope.user.privateChatJID
     unless user
       msg.reply "Sorry, I do not know you :-P"
@@ -282,8 +282,8 @@ class CITestManager
       projectNamePrinted = false
       for  testdetail, value of projectdetail.failedtests
         if value.assigned is user
-          console.log testdetail
-          console.log value.assigned
+          @robot.logger.info testdetail
+          @robot.logger.info value.assigned
           unless projectNamePrinted
             body.t( "Project #{projectname}:\n").c('br')
           body.c('a',{href: value.url}).t(" #{value.name} since #{moment( value.assignedDate ).fromNow()}\n").c('br') if projectNamePrinted = true
@@ -410,11 +410,13 @@ class CITestManager
          storage.projects[project].failedtests[testname].notifiedmanager = true
 
   notifyBuildFailed: (projectname, buildname, url) =>
+    @robot.logger.info "Build #{buildname} is falling!"
     message = new Xmpp.Element( 'message', {} )
     body = message.c( 'html', {xmlns: 'http://jabber.org/protocol/xhtml-im'} ).c( 'body', {xmlns: 'http://www.w3.org/1999/xhtml'} )
     body.t( " This build failed : " ).c( 'a', {href: url} ).t( buildname ).up().t( " for project #{projectname}" ).c( 'br' )
     roomname = @getBroadcastRoomForProject(projectname)
     @sendGroupChatMesssage(roomname, message)
+    @robot.logger.info message
 
 
   sendPrivateMesssage: ( to_jid, message ) ->
