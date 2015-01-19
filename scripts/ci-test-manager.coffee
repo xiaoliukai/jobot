@@ -167,7 +167,7 @@ class CITestManager
       msg.reply( "For which project? Please send something like 'Assign x,y,z to me'" )
       return
 
-    if user.toUpperCase() == "ME"
+    if user.toUpperCase() == "ME" or user.toUpperCase() in ['DBOT', 'JOBOT']
       user = msg.envelope.user.privateChatJID
     else
       # Map simple usernames to private JID. Not sure if hubot's brain can help here
