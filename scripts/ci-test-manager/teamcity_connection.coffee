@@ -1,4 +1,5 @@
-# Most method accept a jsonCallback with signature (err, response as json object)
+# Most method accept a jsonCallback
+# with signature (err, response as json object)
 
 inspect = require( 'eyes' ).inspector( {maxLength: false} )
 
@@ -128,8 +129,8 @@ class TeamcityConnection
 
       # Get failed tests
       result.failedTests = {}
-      for testcase in res.testOccurrence
-        unless   testcase.currentlyMuted is true        
+      for testcase in res.testOccurrence or 0
+        unless   testcase.currentlyMuted is true
           className = testcase.name.substring( 0, testcase.name.lastIndexOf( '.' ) )
           result.failedTests[className] =
             name: className
